@@ -1,8 +1,9 @@
 use super::Link;
 
-//------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 //  Linked
-/// Trait that must be implemented in order to be a member of an intrusive linked list.
+/// Trait that must be implemented in order to be a member of an intrusive
+/// linked list.
 pub trait Linked: Sized {
     /// Borrow this element's [`Links`].
     ///
@@ -26,13 +27,15 @@ pub trait Linked: Sized {
         self.links().prev()
     }
 
-    /// Mutably borrow the `next` element in the list, or `None` if this is the last.
+    /// Mutably borrow the `next` element in the list, or `None` if this is the
+    /// last.
     #[inline]
     fn next_mut(&mut self) -> Option<&mut Self> {
         self.links_mut().next_mut()
     }
 
-    /// Mutably borrow the `prev` element in the list, or `None` if this is the first.
+    /// Mutably borrow the `prev` element in the list, or `None` if this is the
+    /// first.
     #[inline]
     fn prev_mut(&mut self) -> Option<&mut Self> {
         self.links_mut().prev_mut()
@@ -60,8 +63,8 @@ pub trait Linked: Sized {
 
         let links = self.links_mut();
         if let Some(prev) = links.prev.as_mut() {
-            // if this node is currently linked to a prev node, replace the prev
-            // node's next link with the new node.
+            // if this node is currently linked to a prev node, replace the
+            // prev node's next link with the new node.
             prev.links_mut().next = Link::from(&element);
             // and link the pushed node's prev link to this node's old prev node.
             element.links_mut().prev = Link::from(prev);
@@ -71,7 +74,7 @@ pub trait Linked: Sized {
     }
 }
 
-//------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 /// Links
 #[derive(Default)]
 pub struct Links<T> {
@@ -101,13 +104,15 @@ impl<T> Links<T> {
         self.prev.as_ref()
     }
 
-    /// Mutably borrow the `next` element in the list, or `None` if this is the last.
+    /// Mutably borrow the `next` element in the list, or `None` if this is the
+    /// last.
     #[inline]
     pub fn next_mut(&mut self) -> Option<&mut T> {
         self.next.as_mut()
     }
 
-    /// Mutably borrow the `prev` element in the list, or `None` if this is the first.
+    /// Mutably borrow the `prev` element in the list, or `None` if this is the
+    /// first.
     #[inline]
     pub fn prev_mut(&mut self) -> Option<&mut T> {
         self.prev.as_mut()
