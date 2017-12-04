@@ -6,7 +6,7 @@
 //  Released under the terms of the MIT license. See `LICENSE` in the root
 //  directory of this repository for more information.
 //
-//! # SOS Intrusive Collections
+//! # Intruder Alarm - ALARM intrusive collections library.
 //!
 //! _Intrusive_ data structures are data structures whose elements are
 //! "aware" of the structures in which they are stored. That is to say
@@ -24,7 +24,7 @@
 //!
 //! # Features
 //! + `use-std`: use the Rust standard library (`std`), rather than `core`.
-#![crate_name = "intrusive_thought"]
+#![crate_name = "intruder_alarm"]
 #![crate_type = "lib"]
 #![cfg_attr(not(test), no_std)]
 #![feature(shared)]
@@ -39,6 +39,7 @@ use std as core;
 
 use core::default::Default;
 use core::ptr::Shared;
+use core::{fmt, mem};
 
 /// A `Link` provides an [`Option`]-like interface to a [`Shared`] pointer.
 ///
@@ -80,6 +81,32 @@ impl<T> Link<T> {
         self.0.as_mut()
             .map(|shared| unsafe { shared.as_mut() })
     }
+
+    unsafe fn as_ptr(&mut self) -> Option<*mut T> {
+        self.0.as_mut().map(|shared| shared.as_ptr())
+    }
+
+    /// Returns true if this link is empty.
+    #[inline] fn is_none(&self) -> bool { 
+        self.0.is_none()
+    }
+
+    /// Returns true if this link is non-empty.
+    #[inline] fn is_some(&self) -> bool { 
+        self.0.is_some()
+    }
+
+    /// Take `self`, replacing it with `None`
+    #[inline]
+    fn take(&mut self) -> Option<Link<T>> {
+        self.0.take().map(|x| Link(Some(x)))
+    }
+
+    /// Swaps the pointed value with `with`, returning the previous pointer.
+    #[inline]
+    unsafe fn replace<I: Into<Link<T>>>(&mut self, with: I) -> Link<T> {
+        mem::replace(self, with.into())
+    }
 }
 
 impl<T> Default for Link<T> {
@@ -109,4 +136,16 @@ impl<T> From<T> for Link<T> {
         Link::from(&value)
     }
 }
+
+impl<T: fmt::Debug> fmt::Debug for Link<T> {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.as_ref() {
+            Some(t) => write!(f, "Link::Some({:?})", t),
+            None => write!(f, "Link::None")
+        }
+    }
+
+}
+
 pub mod doubly;
