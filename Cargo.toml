@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "intrusive_thought",
+    "intruder_alarm",
     "slabby",
 ]
