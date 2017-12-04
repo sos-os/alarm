@@ -1,6 +1,6 @@
 #![crate_type = "lib"]
 
-#![not(cfg(test), no_std)]
+#![cfg_attr(not(test), no_std)]
 #![feature(shared)]
 #![feature(const_fn)]
 
