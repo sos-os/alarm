@@ -1,3 +1,13 @@
+//! An intrusive linked list implementation using `RawLink`s.
+//!
+//! An _intrusive_ list is a list structure wherein the type of element stored
+//! in the list holds references to other nodes. This means that we don't have
+//! to store a separate node data type that holds the stored elements and
+//! pointers to other nodes, reducing the amount of memory allocated. We can
+//! use intrusive lists in code that runs without the kernel memory allocator,
+//! like the allocator implementation itself, since each list element manages
+//! its own memory.
+
 use super::Link;
 
 //-----------------------------------------------------------------------------
@@ -41,6 +51,7 @@ pub trait Linked: Sized {
         self.links_mut().prev_mut()
     }
 
+    /// Push an element to the front of the list.
     fn push_front(&mut self, mut element: Self) {
         // link the pushed node's prev link back to this node.
         element.links_mut().prev = Link::from(&*self);
@@ -57,6 +68,7 @@ pub trait Linked: Sized {
         links.next = Link::from(&element);
     }
 
+    /// Push an element to the back of the list.
     fn push_back(&mut self, mut element: Self) {
         // link the pushed node's next link back to this node.
         element.links_mut().next = Link::from(&*self);
