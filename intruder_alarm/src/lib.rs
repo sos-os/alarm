@@ -23,7 +23,7 @@
 //! This crate currently provides an intrusive linked-list implementation.
 //!
 //! # Features
-//! + `use-std`: use the Rust standard library (`std`), rather than `core`.
+//! + `std`: use the Rust standard library (`std`), rather than `core`.
 #![crate_name = "intruder_alarm"]
 #![crate_type = "lib"]
 #![cfg_attr(not(test), no_std)]
@@ -34,19 +34,76 @@
 #[cfg(test)]
 #[macro_use]
 extern crate quickcheck;
-#[cfg(test)]
+
+#[cfg(any(feature = "std", test))]
 use std as core;
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
 use core::default::Default;
 use core::ptr::Shared;
 use core::{fmt, mem};
+use core::ops::{Deref, DerefMut};
+
+pub mod doubly;
+
+/// Trait for references which own their referent.
+///
+/// # Safety
+/// This trait is unsafe to implement because:
+/// 1. The referent may not be moved while the owning ref is in an
+///    intrusive collection.
+/// 2. No references may be created to the referent _during_ an intrusive
+///     collection operation.
+/// 3. Finally, the implementing reference type must always dereference to
+///    the _same_ object.
+pub unsafe trait OwningRef<T: ?Sized>: Deref<Target=T> + DerefMut {
+    /// Convert this into a raw pointer to the owned referent.
+    fn into_ptr(self) -> *const Self::Target;
+
+    /// Convert a raw pointer into an owning reference.
+    unsafe fn from_ptr(p: *const Self::Target) -> Self;
+
+}
 
 /// A `Link` provides an [`Option`]-like interface to a [`Shared`] pointer.
 ///
 ///
-pub struct Link<T>(Option<Shared<T>>);
+pub struct Link<T: ?Sized>(Option<Shared<T>>);
 
-impl<T> Link<T> {
+// ===== impl OwningRef =====
+
+// unsafe impl<'a, T: ?Sized> OwningRef<T> for &'a T {
+//     #[inline] fn into_ptr(self) -> *const T { self }
+//     #[inline] unsafe fn from_ptr(p: *const T) -> Self { &*p }
+// }
+
+unsafe impl<'a, T: ?Sized> OwningRef<T> for &'a mut T {
+    #[inline] fn into_ptr(self) -> *const T { self }
+    #[inline] unsafe fn from_ptr(p: *const T) -> Self {
+        &mut *(p as *mut _)
+    }
+}
+
+#[cfg(feature = "alloc")]
+use alloc::boxed::Box;
+#[cfg(any(feature = "std", test))]
+use core::boxed::Box;
+
+#[cfg(any(feature = "alloc", feature = "std", test))]
+unsafe impl<T: ?Sized> OwningRef<T> for Box<T> {
+    #[inline] fn into_ptr(self) -> *const T {
+        Box::into_raw(self)
+    }
+    #[inline] unsafe fn from_ptr(p: *const T) -> Self {
+        Box::from_raw(p as *mut T)
+    }
+}
+
+// ===== impl Link =====
+
+impl<T: ?Sized> Link<T> {
 
     /// Construct a new empty `Link`.
     #[inline]
@@ -87,12 +144,12 @@ impl<T> Link<T> {
     }
 
     /// Returns true if this link is empty.
-    #[inline] fn is_none(&self) -> bool { 
+    #[inline] fn is_none(&self) -> bool {
         self.0.is_none()
     }
 
     /// Returns true if this link is non-empty.
-    #[inline] fn is_some(&self) -> bool { 
+    #[inline] fn is_some(&self) -> bool {
         self.0.is_some()
     }
 
@@ -107,6 +164,21 @@ impl<T> Link<T> {
     unsafe fn replace<I: Into<Link<T>>>(&mut self, with: I) -> Link<T> {
         mem::replace(self, with.into())
     }
+
+    fn from_owning_ref<R>(reference: R) -> Self
+    where
+        R: OwningRef<T>,
+    {
+        Link(Shared::new(reference.into_ptr() as *mut _))
+    }
+}
+
+// Cloning a `Link `returns a new unlinked `Link`, allowing types containing
+// `Link`s to derive `Clone`.
+impl<T: ?Sized> Clone for Link<T> {
+    fn clone(&self) -> Self {
+        Link::none()
+    }
 }
 
 impl<T> Default for Link<T> {
@@ -116,26 +188,39 @@ impl<T> Default for Link<T> {
     }
 }
 
-impl<'a, T> From<&'a T> for Link<T> {
-    #[inline]
-    fn from(reference: &'a T) -> Self {
-        Link(Some(Shared::from(reference)))
-    }
-}
+impl<T: ?Sized> Copy for Link<T>
+where
+    Option<Shared<T>>:  Copy
+{}
+// impl<'a, T> From<&'a T> for Link<T> {
+//     #[inline]
+//     fn from(reference: &'a T) -> Self {
+//         Link(Some(Shared::from(reference)))
+//     }
+// }
 
-impl<'a, T> From<&'a mut T> for Link<T> {
-    #[inline]
-    fn from(reference: &'a mut T) -> Self {
-        Link(Some(Shared::from(reference)))
-    }
-}
+// impl<'a, T> From<&'a mut T> for Link<T> {
+//     #[inline]
+//     fn from(reference: &'a mut T) -> Self {
+//         Link(Some(Shared::from(reference)))
+//     }
+// }
 
-impl<T> From<T> for Link<T> {
-    #[inline]
-    fn from(value: T) -> Self {
-        Link::from(&value)
-    }
-}
+// impl<T> From<T> for Link<T> {
+//     #[inline]
+//     fn from(value: T) -> Self {
+//         Link::from(&value)
+//     }
+// }
+
+// impl<T, R> From<R> for Link<T>
+
+// {
+//     fn from(reference: R) -> Self {
+//         Link(Shared::new(reference.into_ptr() as *mut _))
+//     }
+// }
+
 
 impl<T: fmt::Debug> fmt::Debug for Link<T> {
 
@@ -147,5 +232,3 @@ impl<T: fmt::Debug> fmt::Debug for Link<T> {
     }
 
 }
-
-pub mod doubly;
