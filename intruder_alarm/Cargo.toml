@@ -3,5 +3,8 @@ name = "intruder_alarm"
 version = "0.0.1"
 authors = ["Eliza Weisman <eliza@buoyant.io>"]
 
+[features]
+std = []
+
 [dev-dependencies]
 quickcheck = "0.4.1"
