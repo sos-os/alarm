@@ -9,6 +9,7 @@
 //! its own memory.
 use core::mem;
 use core::marker::PhantomData;
+use core::ops::DerefMut;
 
 use super::{Link, OwningRef};
 #[cfg(test)]
@@ -213,7 +214,9 @@ impl<T, Node, Ref> List<T, Node, Ref>
 where
     Node: Linked,
     Ref: OwningRef<Node>,
+    Ref: DerefMut,
 {
+
     /// Push a node to the head of the list.
     pub fn push_front_node(&mut self, mut node: Ref) -> &mut Self {
         unsafe {
@@ -249,6 +252,14 @@ where
         };
         self
     }
+
+}
+
+impl<T, Node, Ref> List<T, Node, Ref>
+where
+    Node: Linked,
+    Ref: OwningRef<Node>,
+{
 
     /// Pop a node from the front of the list.
     pub fn pop_front_node(&mut self) -> Option<Ref> {
