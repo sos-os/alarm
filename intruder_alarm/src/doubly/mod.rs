@@ -456,34 +456,9 @@ impl<T> Links<T> {
 }
 
 
-// impl<T> Clone for Links<T> {
-//     #[inline]
-//     fn clone(&self) -> Self {
-//         Link::new()
-//     }
-// }
-
-impl<T> Link<T> where T: Linked {
+impl<T> Clone for Links<T> {
     #[inline]
-    unsafe fn next(self) -> Self {
-         unimplemented!()
-    }
-
-    #[inline]
-    unsafe fn prev(self) -> Self {
-         unimplemented!()
-    }
-
-    #[inline]
-    unsafe fn set_next(self, next: Self) {
-         unimplemented!()
-    }
-
-    #[inline]
-    unsafe fn set_prev(self, prev: Self) {
-         unimplemented!()
-    }
-    unsafe fn link_between(self, next: Self, prev: Self) {
-        unimplemented!()
+    fn clone(&self) -> Self {
+        Links::new()
     }
 }
