@@ -44,7 +44,7 @@ extern crate alloc;
 use core::default::Default;
 use core::ptr::Shared;
 use core::{fmt, mem};
-use core::ops::{Deref, DerefMut};
+use core::ops::Deref;
 
 pub mod doubly;
 
@@ -58,7 +58,7 @@ pub mod doubly;
 ///     collection operation.
 /// 3. Finally, the implementing reference type must always dereference to
 ///    the _same_ object.
-pub unsafe trait OwningRef<T: ?Sized>: Deref<Target=T> + DerefMut {
+pub unsafe trait OwningRef<T: ?Sized>: Deref<Target=T> {
     /// Convert this into a raw pointer to the owned referent.
     fn into_ptr(self) -> *const Self::Target;
 
