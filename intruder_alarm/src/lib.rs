@@ -4,7 +4,7 @@
 //  Copyright (c) 2015-2017 Eliza Weisman
 //  Released under the terms of the MIT license. See `LICENSE` in the root
 //  directory of this repository for more information.
-// 
+//
 //! # Intruder Alarm - ALARM intrusive collections library.
 //!
 //! _Intrusive_ data structures are data structures whose elements are
@@ -67,15 +67,21 @@ pub unsafe trait OwningRef<T: ?Sized>: Deref<Target = T> {
 
 /// A `Link` provides an [`Option`]-like interface to a [`Shared`] pointer.
 ///
-/// 
+///
 pub struct Link<T: ?Sized>(Option<Shared<T>>);
 
 // ===== impl OwningRef =====
 
-// unsafe impl<'a, T: ?Sized> OwningRef<T> for &'a T {
-//     #[inline] fn into_ptr(self) -> *const T { self }
-//     #[inline] unsafe fn from_ptr(p: *const T) -> Self { &*p }
-// }
+unsafe impl<'a, T: ?Sized> OwningRef<T> for &'a T {
+    #[inline]
+    fn into_ptr(self) -> *const T {
+        self
+    }
+    #[inline]
+    unsafe fn from_ptr(p: *const T) -> Self {
+        &*p
+    }
+}
 
 unsafe impl<'a, T: ?Sized> OwningRef<T> for &'a mut T {
     #[inline]
