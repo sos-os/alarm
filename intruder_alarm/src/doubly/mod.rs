@@ -7,11 +7,10 @@
 //! use intrusive lists in code that runs without the kernel memory allocator,
 //! like the allocator implementation itself, since each list element manages
 //! its own memory.
-use core::mem;
-use core::marker::PhantomData;
-use core::ops::DerefMut;
-
 use super::{Link, OwningRef};
+use core::marker::PhantomData;
+use core::mem;
+use core::ops::DerefMut;
 #[cfg(test)]
 mod tests;
 
@@ -34,7 +33,6 @@ mod tests;
 /// [`OwningRef]: ../trait.OwningRef.html
 #[derive(Default)]
 pub struct List<T, N, R> {
-
     /// Link to the head node of the list.
     head: Link<N>,
 
@@ -54,9 +52,8 @@ pub struct List<T, N, R> {
 //  Linked
 /// Trait that must be implemented in order to be a member of an intrusive
 /// linked list.
-pub trait Linked: Sized// + Drop
+pub trait Linked: Sized // + Drop
 {
-
     /// Borrow this element's [`Links`].
     ///
     /// [`Links`]: struct.Links.html
@@ -72,13 +69,15 @@ pub trait Linked: Sized// + Drop
         mem::replace(self.links_mut(), Links::new())
     }
 
-    /// Borrow the `next` element in the list, or `None` if this is the last.
+    /// Borrow the `next` element in the list, or `None` if this is the
+    /// last.
     #[inline]
     fn next(&self) -> Option<&Self> {
         self.links().next()
     }
 
-    /// Borrow the `prev` element in the list, or `None` if this is the first.
+    /// Borrow the `prev` element in the list, or `None` if this is the
+    /// first.
     #[inline]
     fn prev(&self) -> Option<&Self> {
         self.links().prev()
@@ -97,7 +96,6 @@ pub trait Linked: Sized// + Drop
     fn prev_mut(&mut self) -> Option<&mut Self> {
         self.links_mut().prev_mut()
     }
-
 }
 
 /// Links
@@ -114,7 +112,6 @@ pub struct Links<T> {
 // ===== impl List =====
 
 impl<T, Node, R> List<T, Node, R> {
-
     /// Create a new `List` with 0 elements.
     pub const fn new() -> Self {
         List {
@@ -127,12 +124,14 @@ impl<T, Node, R> List<T, Node, R> {
     }
 
     /// Returns the length of the list.
-    #[inline] pub fn len(&self) -> usize {
+    #[inline]
+    pub fn len(&self) -> usize {
         self.len
     }
 
     /// Returns true if the list is empty, false otherwise.
-    #[inline] pub fn is_empty(&self) -> bool {
+    #[inline]
+    pub fn is_empty(&self) -> bool {
         self.len == 0
     }
 
@@ -144,7 +143,8 @@ impl<T, Node, R> List<T, Node, R> {
     /// # Returns
     ///   - `Some(&N)` if the list has elements
     ///   - `None` if the list is empty.
-    #[inline] pub fn head(&self) -> Option<&Node> {
+    #[inline]
+    pub fn head(&self) -> Option<&Node> {
         self.head.as_ref()
     }
 
@@ -153,7 +153,8 @@ impl<T, Node, R> List<T, Node, R> {
     /// # Returns
     ///   - `Some(&Node)` if the list has elements
     ///   - `None` if the list is empty.
-    #[inline] pub fn tail(&self) -> Option<&Node> {
+    #[inline]
+    pub fn tail(&self) -> Option<&Node> {
         self.tail.as_ref()
     }
 
@@ -162,7 +163,8 @@ impl<T, Node, R> List<T, Node, R> {
     /// # Returns
     ///   - `Some(&mut Node)` if the list has elements
     ///   - `None` if the list is empty.
-    #[inline] pub fn head_mut(&mut self) -> Option<&mut Node> {
+    #[inline]
+    pub fn head_mut(&mut self) -> Option<&mut Node> {
         self.head.as_mut()
     }
 
@@ -171,10 +173,10 @@ impl<T, Node, R> List<T, Node, R> {
     /// # Returns
     ///   - `Some(&mut Node)` if the list has elements
     ///   - `None` if the list is empty.
-    #[inline] pub fn tail_mut(&mut self) -> Option<&mut Node> {
+    #[inline]
+    pub fn tail_mut(&mut self) -> Option<&mut Node> {
         self.tail.as_mut()
     }
-
 }
 
 impl<T, Node, Ref> List<T, Node, Ref>
@@ -183,7 +185,6 @@ where
     Ref: OwningRef<Node>,
     Ref: DerefMut,
 {
-
     /// Push a node to the head of the list.
     pub fn push_front_node(&mut self, mut node: Ref) -> &mut Self {
         unsafe {
@@ -219,7 +220,6 @@ where
         };
         self
     }
-
 }
 
 impl<T, Node, Ref> List<T, Node, Ref>
@@ -227,7 +227,6 @@ where
     Node: Linked,
     Ref: OwningRef<Node>,
 {
-
     /// Pop a node from the front of the list.
     pub fn pop_front_node(&mut self) -> Option<Ref> {
         unsafe {
@@ -261,12 +260,11 @@ where
             })
         }
     }
-
 }
 
 impl<T, Node, R> List<T, Node, R>
 where
-    Node: AsRef<T>
+    Node: AsRef<T>,
 {
     /// Borrows the first item of the list as an `Option`
     ///
@@ -291,7 +289,7 @@ where
 
 impl<T, Node, R> List<T, Node, R>
 where
-    Node: AsMut<T>
+    Node: AsMut<T>,
 {
     /// Mutably borrows the first element of the list as an `Option`
     ///
@@ -322,16 +320,18 @@ use core::boxed::Box;
 #[cfg(any(feature = "alloc", feature = "std", test))]
 impl<T, Node> List<T, Node, Box<Node>>
 where
-   Node: From<T>,
-   Node: Linked,
+    Node: From<T>,
+    Node: Linked,
 {
     /// Push an item to the front of the list.
-    #[inline] pub fn push_front(&mut self, item: T) -> &mut Self {
+    #[inline]
+    pub fn push_front(&mut self, item: T) -> &mut Self {
         self.push_front_node(Box::new(Node::from(item)))
     }
 
     /// Push an item to the back of the list.
-    #[inline] pub fn push_back(&mut self, item: T) -> &mut Self {
+    #[inline]
+    pub fn push_back(&mut self, item: T) -> &mut Self {
         self.push_back_node(Box::new(Node::from(item)))
     }
 }
@@ -339,21 +339,19 @@ where
 #[cfg(any(feature = "alloc", feature = "std", test))]
 impl<T, Node> List<T, Node, Box<Node>>
 where
-   Node: Linked,
-   Node: Into<T>,
+    Node: Linked,
+    Node: Into<T>,
 {
     /// Pop an item from the front of the list.
     #[inline]
     pub fn pop_front(&mut self) -> Option<T> {
-       self.pop_front_node()
-           .map(|b| (*b).into())
+        self.pop_front_node().map(|b| (*b).into())
     }
 
     /// Pop an item from the front of the list.
     #[inline]
-    pub fn pop_back(&mut self) -> Option<T>  {
-        self.pop_back_node()
-            .map(|b| (*b).into())
+    pub fn pop_back(&mut self) -> Option<T> {
+        self.pop_back_node().map(|b| (*b).into())
     }
 }
 
@@ -369,13 +367,15 @@ impl<T> Links<T> {
         }
     }
 
-    /// Borrow the `next` element in the list, or `None` if this is the last.
+    /// Borrow the `next` element in the list, or `None` if this is the
+    /// last.
     #[inline]
     fn next(&self) -> Option<&T> {
         self.next.as_ref()
     }
 
-    /// Borrow the `prev` element in the list, or `None` if this is the first.
+    /// Borrow the `prev` element in the list, or `None` if this is the
+    /// first.
     #[inline]
     fn prev(&self) -> Option<&T> {
         self.prev.as_ref()

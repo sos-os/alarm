@@ -18,9 +18,8 @@ pub struct Page<T: Sized> {
 
     /// Length of the page.
     len: usize,
-
-//    next: Shared<Page<T>>,
-//    prev: Shared<Page<T>>,
+    /*    next: Shared<Page<T>>,
+     *    prev: Shared<Page<T>>, */
 }
 
 #[cfg(test)]

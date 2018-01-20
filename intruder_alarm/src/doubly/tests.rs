@@ -1,16 +1,15 @@
-//
 //  SOS: the Stupid Operating System
 //  by Eliza Weisman (eliza@elizas.website)
 //
 //  Copyright (c) 2015-2017 Eliza Weisman
 //  Released under the terms of the MIT license. See `LICENSE` in the root
 //  directory of this repository for more information.
-//
+// 
 
 use super::*;
 use super::Linked;
-use std::default::Default;
 use quickcheck::TestResult;
+use std::default::Default;
 
 #[derive(Default, Debug)]
 pub struct NumberedNode {
@@ -28,11 +27,19 @@ impl NumberedNode {
 }
 
 impl Linked for NumberedNode {
-    #[inline] fn links(&self) -> &Links<Self> { &self.links }
-    #[inline] fn links_mut(&mut self) -> &mut Links<Self> { &mut self.links }
+    #[inline]
+    fn links(&self) -> &Links<Self> {
+        &self.links
+    }
+    #[inline]
+    fn links_mut(&mut self) -> &mut Links<Self> {
+        &mut self.links
+    }
 }
 impl PartialEq for NumberedNode {
-    fn eq(&self, rhs: &Self) -> bool { self.number == rhs.number }
+    fn eq(&self, rhs: &Self) -> bool {
+        self.number == rhs.number
+    }
 }
 
 impl From<usize> for NumberedNode {
@@ -54,7 +61,8 @@ mod boxed {
         use std::boxed::Box;
         #[test]
         fn not_empty_after_first_push() {
-            let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list =
+                List::<usize, NumberedNode, Box<NumberedNode>>::new();
 
             assert_eq!(list.head(), None);
             assert_eq!(list.tail(), None);
@@ -69,7 +77,8 @@ mod boxed {
 
         #[test]
         fn contents_after_first_push() {
-            let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list =
+                List::<usize, NumberedNode, Box<NumberedNode>>::new();
             assert_eq!(list.head(), None);
             assert_eq!(list.tail(), None);
 
@@ -81,7 +90,8 @@ mod boxed {
 
         #[test]
         fn head_tail_equal_after_first_push() {
-            let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list =
+                List::<usize, NumberedNode, Box<NumberedNode>>::new();
             assert_eq!(list.head(), list.tail());
 
             list.push_front_node(Box::new(NumberedNode::new(444)));
@@ -91,7 +101,8 @@ mod boxed {
 
         #[test]
         fn head_tail_not_equal_after_second_push() {
-            let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list =
+                List::<usize, NumberedNode, Box<NumberedNode>>::new();
 
             list.push_front_node(Box::new(NumberedNode::new(444)));
             list.push_front_node(Box::new(NumberedNode::new(555)));
@@ -101,7 +112,7 @@ mod boxed {
     }
 
     #[test]
-     fn head_tail_not_same_second_push()  {
+    fn head_tail_not_same_second_push() {
         let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
         let a = 444;
         let b = 555;
@@ -111,7 +122,6 @@ mod boxed {
 
         assert!(list.head().unwrap() != list.tail().unwrap());
     }
-
 
     quickcheck! {
 
@@ -357,4 +367,3 @@ mod boxed {
         assert_eq!(list.pop_back(), None);
     }
 }
-

@@ -1,11 +1,10 @@
-//
 //  SOS: the Stupid Operating System
 //  by Eliza Weisman (eliza@elizas.website)
 //
 //  Copyright (c) 2015-2017 Eliza Weisman
 //  Released under the terms of the MIT license. See `LICENSE` in the root
 //  directory of this repository for more information.
-//
+// 
 //! # Intruder Alarm - ALARM intrusive collections library.
 //!
 //! _Intrusive_ data structures are data structures whose elements are
@@ -41,10 +40,10 @@ use std as core;
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-use core::default::Default;
-use core::ptr::Shared;
 use core::{fmt, mem};
+use core::default::Default;
 use core::ops::Deref;
+use core::ptr::Shared;
 
 pub mod doubly;
 
@@ -58,18 +57,17 @@ pub mod doubly;
 ///     collection operation.
 /// 3. Finally, the implementing reference type must always dereference to
 ///    the _same_ object.
-pub unsafe trait OwningRef<T: ?Sized>: Deref<Target=T> {
+pub unsafe trait OwningRef<T: ?Sized>: Deref<Target = T> {
     /// Convert this into a raw pointer to the owned referent.
     fn into_ptr(self) -> *const Self::Target;
 
     /// Convert a raw pointer into an owning reference.
     unsafe fn from_ptr(p: *const Self::Target) -> Self;
-
 }
 
 /// A `Link` provides an [`Option`]-like interface to a [`Shared`] pointer.
 ///
-///
+/// 
 pub struct Link<T: ?Sized>(Option<Shared<T>>);
 
 // ===== impl OwningRef =====
@@ -80,8 +78,12 @@ pub struct Link<T: ?Sized>(Option<Shared<T>>);
 // }
 
 unsafe impl<'a, T: ?Sized> OwningRef<T> for &'a mut T {
-    #[inline] fn into_ptr(self) -> *const T { self }
-    #[inline] unsafe fn from_ptr(p: *const T) -> Self {
+    #[inline]
+    fn into_ptr(self) -> *const T {
+        self
+    }
+    #[inline]
+    unsafe fn from_ptr(p: *const T) -> Self {
         &mut *(p as *mut _)
     }
 }
@@ -93,10 +95,12 @@ use core::boxed::Box;
 
 #[cfg(any(feature = "alloc", feature = "std", test))]
 unsafe impl<T: ?Sized> OwningRef<T> for Box<T> {
-    #[inline] fn into_ptr(self) -> *const T {
+    #[inline]
+    fn into_ptr(self) -> *const T {
         Box::into_raw(self)
     }
-    #[inline] unsafe fn from_ptr(p: *const T) -> Self {
+    #[inline]
+    unsafe fn from_ptr(p: *const T) -> Self {
         Box::from_raw(p as *mut T)
     }
 }
@@ -104,7 +108,6 @@ unsafe impl<T: ?Sized> OwningRef<T> for Box<T> {
 // ===== impl Link =====
 
 impl<T: ?Sized> Link<T> {
-
     /// Construct a new empty `Link`.
     #[inline]
     pub const fn none() -> Self {
@@ -121,8 +124,7 @@ impl<T: ?Sized> Link<T> {
     ///   - Returning a reference with an arbitrary lifetime
     ///   - Dereferencing a raw pointer
     fn as_ref(&self) -> Option<&T> {
-        self.0.as_ref()
-            .map(|shared| unsafe { shared.as_ref() })
+        self.0.as_ref().map(|shared| unsafe { shared.as_ref() })
     }
 
     /// Mutably resolve this `Link` to an `Option`
@@ -135,8 +137,7 @@ impl<T: ?Sized> Link<T> {
     ///   - Returning a reference with an arbitrary lifetime
     ///   - Dereferencing a raw pointer
     fn as_mut(&mut self) -> Option<&mut T> {
-        self.0.as_mut()
-            .map(|shared| unsafe { shared.as_mut() })
+        self.0.as_mut().map(|shared| unsafe { shared.as_mut() })
     }
 
     unsafe fn as_ptr(&mut self) -> Option<*mut T> {
@@ -144,12 +145,14 @@ impl<T: ?Sized> Link<T> {
     }
 
     /// Returns true if this link is empty.
-    #[inline] fn is_none(&self) -> bool {
+    #[inline]
+    fn is_none(&self) -> bool {
         self.0.is_none()
     }
 
     /// Returns true if this link is non-empty.
-    #[inline] fn is_some(&self) -> bool {
+    #[inline]
+    fn is_some(&self) -> bool {
         self.0.is_some()
     }
 
@@ -190,8 +193,9 @@ impl<T> Default for Link<T> {
 
 impl<T: ?Sized> Copy for Link<T>
 where
-    Option<Shared<T>>:  Copy
-{}
+    Option<Shared<T>>: Copy,
+{
+}
 // impl<'a, T> From<&'a T> for Link<T> {
 //     #[inline]
 //     fn from(reference: &'a T) -> Self {
@@ -221,14 +225,11 @@ where
 //     }
 // }
 
-
 impl<T: fmt::Debug> fmt::Debug for Link<T> {
-
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.as_ref() {
             Some(t) => write!(f, "Link::Some({:?})", t),
-            None => write!(f, "Link::None")
+            None => write!(f, "Link::None"),
         }
     }
-
 }
