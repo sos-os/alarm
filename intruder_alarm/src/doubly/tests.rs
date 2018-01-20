@@ -41,6 +41,11 @@ impl From<usize> for NumberedNode {
     }
 }
 
+impl Into<usize> for NumberedNode {
+    fn into(self) -> usize {
+        self.number
+    }
+}
 mod boxed {
     use super::*;
     use std::boxed::Box;
@@ -203,79 +208,153 @@ mod boxed {
 
         assert!(!list.is_empty());
     }
+
+    #[test]
+    fn test_pop_front_node() {
+        let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+
+        assert_eq!(list.head(), None);
+        assert_eq!(list.tail(), None);
+        assert!(list.is_empty());
+
+        list.push_front_node(Box::new(NumberedNode::new(2)));
+
+        assert!(!list.is_empty());
+        assert_eq!(list.head(), list.tail());
+
+        list.push_front_node(Box::new(NumberedNode::new(1)));
+        list.push_front_node(Box::new(NumberedNode::new(0)));
+
+        assert_eq!(list.head().unwrap().number, 0);
+        assert_eq!(list.tail().unwrap().number, 2);
+
+        list.push_back_node(Box::new(NumberedNode::new(3)));
+        assert_eq!(list.tail().unwrap().number, 3);
+
+        list.push_back_node(Box::new(NumberedNode::new(4)));
+        assert_eq!(list.tail().unwrap().number, 4);
+
+        assert!(!list.is_empty());
+
+        assert_eq!(list.pop_front_node().unwrap().number, 0);
+        assert_eq!(list.pop_front_node().unwrap().number, 1);
+        assert_eq!(list.pop_front_node().unwrap().number, 2);
+        assert_eq!(list.pop_front_node().unwrap().number, 3);
+        assert_eq!(list.pop_front_node().unwrap().number, 4);
+
+        assert!(list.is_empty());
+        assert_eq!(list.pop_front_node(), None);
+    }
+
+    #[test]
+    fn test_pop_back_node() {
+        let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+
+        assert_eq!(list.head(), None);
+        assert_eq!(list.tail(), None);
+        assert!(list.is_empty());
+
+        list.push_front_node(Box::new(NumberedNode::new(2)));
+
+        assert!(!list.is_empty());
+        assert_eq!(list.head(), list.tail());
+
+        list.push_front_node(Box::new(NumberedNode::new(1)));
+        list.push_front_node(Box::new(NumberedNode::new(0)));
+
+        assert_eq!(list.head().unwrap().number, 0);
+        assert_eq!(list.tail().unwrap().number, 2);
+
+        list.push_back_node(Box::new(NumberedNode::new(3)));
+        assert_eq!(list.tail().unwrap().number, 3);
+
+        list.push_back_node(Box::new(NumberedNode::new(4)));
+        assert_eq!(list.tail().unwrap().number, 4);
+
+        assert!(!list.is_empty());
+
+        assert_eq!(list.pop_back_node().unwrap().number, 4);
+        assert_eq!(list.pop_back_node().unwrap().number, 3);
+        assert_eq!(list.pop_back_node().unwrap().number, 2);
+        assert_eq!(list.pop_back_node().unwrap().number, 1);
+        assert_eq!(list.pop_back_node().unwrap().number, 0);
+
+        assert!(list.is_empty());
+        assert_eq!(list.pop_back_node(), None);
+    }
+
+    #[test]
+    fn test_pop_front() {
+        let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+
+        assert_eq!(list.head(), None);
+        assert_eq!(list.tail(), None);
+        assert!(list.is_empty());
+
+        list.push_front_node(Box::new(NumberedNode::new(2)));
+
+        assert!(!list.is_empty());
+        assert_eq!(list.head(), list.tail());
+
+        list.push_front_node(Box::new(NumberedNode::new(1)));
+        list.push_front_node(Box::new(NumberedNode::new(0)));
+
+        assert_eq!(list.head().unwrap().number, 0);
+        assert_eq!(list.tail().unwrap().number, 2);
+
+        list.push_back_node(Box::new(NumberedNode::new(3)));
+        assert_eq!(list.tail().unwrap().number, 3);
+
+        list.push_back_node(Box::new(NumberedNode::new(4)));
+        assert_eq!(list.tail().unwrap().number, 4);
+
+        assert!(!list.is_empty());
+
+        assert_eq!(list.pop_front().unwrap(), 0);
+        assert_eq!(list.pop_front().unwrap(), 1);
+        assert_eq!(list.pop_front().unwrap(), 2);
+        assert_eq!(list.pop_front().unwrap(), 3);
+        assert_eq!(list.pop_front().unwrap(), 4);
+
+        assert!(list.is_empty());
+        assert_eq!(list.pop_front(), None);
+    }
+
+    #[test]
+    fn test_pop_back() {
+        let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+
+        assert_eq!(list.head(), None);
+        assert_eq!(list.tail(), None);
+        assert!(list.is_empty());
+
+        list.push_front_node(Box::new(NumberedNode::new(2)));
+
+        assert!(!list.is_empty());
+        assert_eq!(list.head(), list.tail());
+
+        list.push_front_node(Box::new(NumberedNode::new(1)));
+        list.push_front_node(Box::new(NumberedNode::new(0)));
+
+        assert_eq!(list.head().unwrap().number, 0);
+        assert_eq!(list.tail().unwrap().number, 2);
+
+        list.push_back_node(Box::new(NumberedNode::new(3)));
+        assert_eq!(list.tail().unwrap().number, 3);
+
+        list.push_back_node(Box::new(NumberedNode::new(4)));
+        assert_eq!(list.tail().unwrap().number, 4);
+
+        assert!(!list.is_empty());
+
+        assert_eq!(list.pop_back().unwrap(), 4);
+        assert_eq!(list.pop_back().unwrap(), 3);
+        assert_eq!(list.pop_back().unwrap(), 2);
+        assert_eq!(list.pop_back().unwrap(), 1);
+        assert_eq!(list.pop_back().unwrap(), 0);
+
+        assert!(list.is_empty());
+        assert_eq!(list.pop_back(), None);
+    }
 }
 
-//
-// #[test]
-// fn test_pop_front() {
-//     let mut list = List::<usize, NumberedNode>::new();
-//
-//     assert_eq!(list.head(), None);
-//     assert_eq!(list.tail(), None);
-//     assert!(list.is_empty());
-//
-//     list.push_front_node(Box::new(NumberedNode::new(2)));
-//
-//     assert!(!list.is_empty());
-//     assert_eq!(list.head(), list.tail());
-//
-//     list.push_front_node(Box::new(NumberedNode::new(1)));
-//     list.push_front_node(Box::new(NumberedNode::new(0)));
-//
-//     assert_eq!(list.head().unwrap().number, 0);
-//     assert_eq!(list.tail().unwrap().number, 2);
-//
-//     list.push_back_node(Box::new(NumberedNode::new(3)));
-//     assert_eq!(list.tail().unwrap().number, 3);
-//
-//     list.push_back_node(Box::new(NumberedNode::new(4)));
-//     assert_eq!(list.tail().unwrap().number, 4);
-//
-//     assert!(!list.is_empty());
-//
-//     assert_eq!(list.pop_front().unwrap().number, 0);
-//     assert_eq!(list.pop_front().unwrap().number, 1);
-//     assert_eq!(list.pop_front().unwrap().number, 2);
-//     assert_eq!(list.pop_front().unwrap().number, 3);
-//     assert_eq!(list.pop_front().unwrap().number, 4);
-//
-//     assert!(list.is_empty());
-//     assert_eq!(list.pop_front(), None);
-// }
-//
-// #[test]
-// fn test_pop_back() {
-//     let mut list = List::<usize, NumberedNode>::new();
-//
-//     assert_eq!(list.head(), None);
-//     assert_eq!(list.tail(), None);
-//     assert!(list.is_empty());
-//
-//     list.push_front_node(Box::new(NumberedNode::new(2)));
-//
-//     assert!(!list.is_empty());
-//     assert_eq!(list.head(), list.tail());
-//
-//     list.push_front_node(Box::new(NumberedNode::new(1)));
-//     list.push_front_node(Box::new(NumberedNode::new(0)));
-//
-//     assert_eq!(list.head().unwrap().number, 0);
-//     assert_eq!(list.tail().unwrap().number, 2);
-//
-//     list.push_back_node(Box::new(NumberedNode::new(3)));
-//     assert_eq!(list.tail().unwrap().number, 3);
-//
-//     list.push_back_node(Box::new(NumberedNode::new(4)));
-//     assert_eq!(list.tail().unwrap().number, 4);
-//
-//     assert!(!list.is_empty());
-//
-//     assert_eq!(list.pop_back().unwrap().number, 4);
-//     assert_eq!(list.pop_back().unwrap().number, 3);
-//     assert_eq!(list.pop_back().unwrap().number, 2);
-//     assert_eq!(list.pop_back().unwrap().number, 1);
-//     assert_eq!(list.pop_back().unwrap().number, 0);
-//
-//     assert!(list.is_empty());
-//     assert_eq!(list.pop_back(), None);
-// }

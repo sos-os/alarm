@@ -98,39 +98,6 @@ pub trait Linked: Sized// + Drop
         self.links_mut().prev_mut()
     }
 
-    /// Push an element to the front of the list.
-    fn push_front<R>(&mut self, element: R) {
-        // // link the pushed node's prev link back to this node.
-        // element.links_mut().prev = Link::from(&*self);
-        // let links = self.links_mut();
-        // if let Some(next) = links.next.as_mut() {
-        //     // if this node is currently linked to a next node, replace the next
-        //     // node's prev link with the new node.
-        //     next.links_mut().prev = Link::from(&*element);
-        //     // and link the pushed node's next link to this node's old next node.
-        //     element.links_mut().next = Link::from(next);
-        // }
-        // // this node's next link points to the pushed node.
-        // links.next = Link::from(element);
-    }
-
-    /// Push an element to the back of the list.
-    fn push_back(&mut self, element: &mut Self) {
-        // link the pushed node's next link back to this node.
-        // element.links_mut().next = Link::from(&*self);
-
-        // let links = self.links_mut();
-        // if let Some(prev) = links.prev.as_mut() {
-        //     // if this node is currently linked to a prev node, replace the
-        //     // prev node's next link with the new node.
-        //     prev.links_mut().next = Link::from(&*element);
-        //     // and link the pushed node's prev link to this node's old prev node.
-        //     element.links_mut().prev = Link::from(prev);
-        // }
-        // // this node's prev link points to the pushed node.
-        // links.prev = Link::from(element);
-    }
-
 }
 
 /// Links
@@ -369,28 +336,26 @@ where
     }
 }
 
-// impl<T, Node, R> List<T, Node, R>
-// where
-//     // TODO: this is where an adapter trait *might* come in handy...
-//    *mut Node: Into<T>,
-//    Node: Linked,
-//    R: OwningRef<Node>,
-// {
-//     /// Pop an item from the front of the list.
-//     #[inline]
-//     pub fn pop_front(&mut self) -> Option<T> {
-//         self.pop_front_node()
-//             .map(Into::into)
-//     }
+#[cfg(any(feature = "alloc", feature = "std", test))]
+impl<T, Node> List<T, Node, Box<Node>>
+where
+   Node: Linked,
+   Node: Into<T>,
+{
+    /// Pop an item from the front of the list.
+    #[inline]
+    pub fn pop_front(&mut self) -> Option<T> {
+       self.pop_front_node()
+           .map(|b| (*b).into())
+    }
 
-//     /// Pop an item from the front of the list.
-//     #[inline]
-//     pub fn pop_back(&mut self) -> Option<T>  {
-//         self.pop_back_node()
-//             .map(Into::into)
-//     }
-// }
-
+    /// Pop an item from the front of the list.
+    #[inline]
+    pub fn pop_back(&mut self) -> Option<T>  {
+        self.pop_back_node()
+            .map(|b| (*b).into())
+    }
+}
 
 // ===== impl Links =====
 
