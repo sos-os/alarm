@@ -15,6 +15,8 @@ use super::{Link, OwningRef};
 mod tests;
 
 //-----------------------------------------------------------------------------
+// Public API types
+//-----------------------------------------------------------------------------
 //  List
 /// An intrusive doubly-linked list.
 ///
@@ -31,16 +33,120 @@ mod tests;
 /// [`OwningRef]: ../trait.OwningRef.html
 #[derive(Default)]
 pub struct List<T, N, R> {
+
+    /// Link to the head node of the list.
     head: Link<N>,
+
+    /// Link to the tail node of the list.
     tail: Link<N>,
+
+    /// Length of the list.
     len: usize,
+
+    /// Type marker for items stored in the list.
     _elem_ty: PhantomData<T>,
+
+    /// Type marker for the `OwningRef` type.
     _ref_ty: PhantomData<R>,
 }
 
+//  Linked
+/// Trait that must be implemented in order to be a member of an intrusive
+/// linked list.
+pub trait Linked: Sized// + Drop
+{
 
-impl<T, Node, R> List<T, Node, R>
-where R: OwningRef<Node> {
+    /// Borrow this element's [`Links`].
+    ///
+    /// [`Links`]: struct.Links.html
+    fn links(&self) -> &Links<Self>;
+
+    /// Mutably borrow this element's [`Links`].
+    ///
+    /// [`Links`]: struct.Links.html
+    fn links_mut(&mut self) -> &mut Links<Self>;
+
+    /// De-link this node, returning its' Links.
+    fn take_links(&mut self) -> Links<Self> {
+        mem::replace(self.links_mut(), Links::new())
+    }
+
+    /// Borrow the `next` element in the list, or `None` if this is the last.
+    #[inline]
+    fn next(&self) -> Option<&Self> {
+        self.links().next()
+    }
+
+    /// Borrow the `prev` element in the list, or `None` if this is the first.
+    #[inline]
+    fn prev(&self) -> Option<&Self> {
+        self.links().prev()
+    }
+
+    /// Mutably borrow the `next` element in the list, or `None` if this is the
+    /// last.
+    #[inline]
+    fn next_mut(&mut self) -> Option<&mut Self> {
+        self.links_mut().next_mut()
+    }
+
+    /// Mutably borrow the `prev` element in the list, or `None` if this is the
+    /// first.
+    #[inline]
+    fn prev_mut(&mut self) -> Option<&mut Self> {
+        self.links_mut().prev_mut()
+    }
+
+    /// Push an element to the front of the list.
+    fn push_front<R>(&mut self, element: R) {
+        // // link the pushed node's prev link back to this node.
+        // element.links_mut().prev = Link::from(&*self);
+        // let links = self.links_mut();
+        // if let Some(next) = links.next.as_mut() {
+        //     // if this node is currently linked to a next node, replace the next
+        //     // node's prev link with the new node.
+        //     next.links_mut().prev = Link::from(&*element);
+        //     // and link the pushed node's next link to this node's old next node.
+        //     element.links_mut().next = Link::from(next);
+        // }
+        // // this node's next link points to the pushed node.
+        // links.next = Link::from(element);
+    }
+
+    /// Push an element to the back of the list.
+    fn push_back(&mut self, element: &mut Self) {
+        // link the pushed node's next link back to this node.
+        // element.links_mut().next = Link::from(&*self);
+
+        // let links = self.links_mut();
+        // if let Some(prev) = links.prev.as_mut() {
+        //     // if this node is currently linked to a prev node, replace the
+        //     // prev node's next link with the new node.
+        //     prev.links_mut().next = Link::from(&*element);
+        //     // and link the pushed node's prev link to this node's old prev node.
+        //     element.links_mut().prev = Link::from(prev);
+        // }
+        // // this node's prev link points to the pushed node.
+        // links.prev = Link::from(element);
+    }
+
+}
+
+/// Links
+#[derive(Default, Debug)]
+pub struct Links<T> {
+    pub(super) next: Link<T>,
+    pub(super) prev: Link<T>,
+}
+
+//-----------------------------------------------------------------------------
+// Implementations
+//-----------------------------------------------------------------------------
+
+// ===== impl List =====
+
+impl<T, Node, R> List<T, Node, R> {
+
     /// Create a new `List` with 0 elements.
     pub const fn new() -> Self {
         List {
@@ -61,9 +167,7 @@ where R: OwningRef<Node> {
     #[inline] pub fn is_empty(&self) -> bool {
         self.len == 0
     }
-}
 
-impl<T, Node, R> List<T, Node, R> {
     /// Borrows the first node of the list as an `Option`.
     ///
     /// Note that this is distinct from `front`: this method
@@ -105,7 +209,6 @@ impl<T, Node, R> List<T, Node, R> {
 
 }
 
-
 impl<T, Node, Ref> List<T, Node, Ref>
 where
     Node: Linked,
@@ -113,16 +216,6 @@ where
 {
     /// Push a node to the head of the list.
     pub fn push_front_node(&mut self, mut node: Ref) -> &mut Self {
-        // let node = Link::from_owning_ref(node);
-        // // if let Some(ref mut head) = self.head.as_mut() {
-        // //     head.push_front(&mut node);
-        // // }
-        // self.head = node;
-        // if self.tail.is_none() {
-        //     self.tail = node;
-        // }
-        // self.len += 1;
-        // self
         unsafe {
             node.links_mut().next = self.head;
             node.links_mut().prev = Link::none();
@@ -141,16 +234,6 @@ where
 
     /// Push an node to the back of the list.
     pub fn push_back_node(&mut self, mut node: Ref) -> &mut Self {
-        // let new = Link::from_owning_ref(node);
-        // if let Some(ref mut tail) = self.tail.as_mut() {
-        //     tail.push_back(&mut node);
-        // }
-        // self.tail = new;
-        // if self.head.is_none() {
-        //     self.head = new;
-        // }
-        // self.len += 1;
-        // self
         unsafe {
             node.links_mut().next = Link::none();
             node.links_mut().prev = self.tail;
@@ -297,111 +380,13 @@ where
 //     }
 // }
 
-//-----------------------------------------------------------------------------
-//  Linked
-/// Trait that must be implemented in order to be a member of an intrusive
-/// linked list.
-pub trait Linked: Sized// + Drop
-{
 
-    /// Borrow this element's [`Links`].
-    ///
-    /// [`Links`]: struct.Links.html
-    fn links(&self) -> &Links<Self>;
-
-    /// Mutably borrow this element's [`Links`].
-    ///
-    /// [`Links`]: struct.Links.html
-    fn links_mut(&mut self) -> &mut Links<Self>;
-
-    /// De-link this node, returning its' Links.
-    fn take_links(&mut self) -> Links<Self> {
-        mem::replace(self.links_mut(), Links::new())
-    }
-
-    /// Borrow the `next` element in the list, or `None` if this is the last.
-    #[inline]
-    fn next(&self) -> Option<&Self> {
-        self.links().next()
-    }
-
-    /// Borrow the `prev` element in the list, or `None` if this is the first.
-    #[inline]
-    fn prev(&self) -> Option<&Self> {
-        self.links().prev()
-    }
-
-    /// Mutably borrow the `next` element in the list, or `None` if this is the
-    /// last.
-    #[inline]
-    fn next_mut(&mut self) -> Option<&mut Self> {
-        self.links_mut().next_mut()
-    }
-
-    /// Mutably borrow the `prev` element in the list, or `None` if this is the
-    /// first.
-    #[inline]
-    fn prev_mut(&mut self) -> Option<&mut Self> {
-        self.links_mut().prev_mut()
-    }
-
-    /// Push an element to the front of the list.
-    fn push_front<R>(&mut self, element: R) {
-        // // link the pushed node's prev link back to this node.
-        // element.links_mut().prev = Link::from(&*self);
-        // let links = self.links_mut();
-        // if let Some(next) = links.next.as_mut() {
-        //     // if this node is currently linked to a next node, replace the next
-        //     // node's prev link with the new node.
-        //     next.links_mut().prev = Link::from(&*element);
-        //     // and link the pushed node's next link to this node's old next node.
-        //     element.links_mut().next = Link::from(next);
-        // }
-        // // this node's next link points to the pushed node.
-        // links.next = Link::from(element);
-    }
-
-    /// Push an element to the back of the list.
-    fn push_back(&mut self, element: &mut Self) {
-        // link the pushed node's next link back to this node.
-        // element.links_mut().next = Link::from(&*self);
-
-        // let links = self.links_mut();
-        // if let Some(prev) = links.prev.as_mut() {
-        //     // if this node is currently linked to a prev node, replace the
-        //     // prev node's next link with the new node.
-        //     prev.links_mut().next = Link::from(&*element);
-        //     // and link the pushed node's prev link to this node's old prev node.
-        //     element.links_mut().prev = Link::from(prev);
-        // }
-        // // this node's prev link points to the pushed node.
-        // links.prev = Link::from(element);
-    }
-
-}
-
-
-/// A linked list node that contains an item.
-pub trait Container: Linked {
-    /// The type of the item contained in the node.
-    type Item;
-    /// Construct a new node containing the given item.
-    fn new(item: Self::Item) -> Self;
-
-}
-
-//-----------------------------------------------------------------------------
-/// Links
-#[derive(Default, Debug)]
-pub struct Links<T> {
-    pub(super) next: Link<T>,
-    pub(super) prev: Link<T>,
-}
+// ===== impl Links =====
 
 impl<T> Links<T> {
     /// Returns a new unlinked set of `Links`.
     #[inline]
-    pub const fn new() -> Self {
+    const fn new() -> Self {
         Links {
             next: Link::none(),
             prev: Link::none(),
@@ -410,13 +395,13 @@ impl<T> Links<T> {
 
     /// Borrow the `next` element in the list, or `None` if this is the last.
     #[inline]
-    pub fn next(&self) -> Option<&T> {
+    fn next(&self) -> Option<&T> {
         self.next.as_ref()
     }
 
     /// Borrow the `prev` element in the list, or `None` if this is the first.
     #[inline]
-    pub fn prev(&self) -> Option<&T> {
+    fn prev(&self) -> Option<&T> {
         self.prev.as_ref()
     }
 
@@ -426,7 +411,7 @@ impl<T> Links<T> {
     /// - `Some(&mut T)` if there is a next element in the list.
     /// -  or `None` if this is the last.
     #[inline]
-    pub fn next_mut(&mut self) -> Option<&mut T> {
+    fn next_mut(&mut self) -> Option<&mut T> {
         self.next.as_mut()
     }
 
@@ -436,25 +421,16 @@ impl<T> Links<T> {
     /// - `Some(&mut T)` if there is a previous element in the list.
     /// -  or `None` if this is the first.
     #[inline]
-    pub fn prev_mut(&mut self) -> Option<&mut T> {
+    fn prev_mut(&mut self) -> Option<&mut T> {
         self.prev.as_mut()
     }
 
     /// Returns true if this set of links is a member of a list.
     #[inline]
-    pub fn is_linked(&self) -> bool {
+    fn is_linked(&self) -> bool {
         self.next.is_some()
     }
-
-    // fn set_next<I: Into<Link<T>>>(&mut self, next: I) -> Link<T> {
-    //     self.next.replace(next)
-    // }
-
-    // fn set_prev<I: Into<Link<T>>>(&mut self, prev: I) -> Link<T> {
-    //     self.prev.replace(prev)
-    // }
 }
-
 
 impl<T> Clone for Links<T> {
     #[inline]
