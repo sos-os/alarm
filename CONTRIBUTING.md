@@ -11,8 +11,6 @@ Contributing to ALARM
 + [What do I need to know before contributing?](#what-do-i-need-to-know-before-contributing)
     - [Code of Conduct](#code-of-conduct)
     - [Licensing](#licensing)
-    - [Setting Up a Dev Environment](#setting-up-a-dev-environment)
-+ [Project Goals & Objectives](#project-goals--objectives)
 + [Conventions & Style Guides](#conventions--style-guides)
     - [Git Conventions](#git-conventions)
         * [Pull Requests](#pull-requests)
@@ -32,12 +30,6 @@ Please report unacceptable behavior to [eliza@elizas.website](mailto:eliza@eliza
 ### Licensing
 
 ALARM is dual-licensed under the [MIT](LICENSE-MIT) and [Apache 2](LICENSE-APACHE) open-source licenses. By contributing code to ALARM, you agree to waive all copyright claims on your contribution and allow it to be distributed under these licenses.
-
-### Setting Up a Dev Environment
-
-Building an OS is often a fairly difficult process, and can require a number of specific tools, libraries, and other dependencies installed and configured on the host system. In order to make contributing to SOS as easy as possible, we've tried to streamline the development environment setup process as much as possible, but there are still a few steps required before you can build SOS. Please see [BUILDING.md](BUILDING.md) for detailed instructions on how to build SOS.
-
-In addition, the [tools to assist with coding style](#tools-to-assist-with-coding-style) section in this document provides information on optional tools that can be used to ensure your contributions conform to SOS' preferred coding style.
 
 Conventions & Style Guides
 ==========================
@@ -109,10 +101,6 @@ Rust code should:
 + Not exceed 80 characters per line.
 
 ### Tools to Assist With Coding Style
-
-<!-- #### EditorConfig
-
-An [`.editorconfig` file](.editorconfig) is available for [compatible text editors](http://editorconfig.org/#download). If the EditorConfig plugin is installed in your text editor, it will use this file to automatically configure certain formatting settings for the `an-editor` repository. -->
 
 #### rustfmt
 
