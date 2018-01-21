@@ -97,7 +97,6 @@ Rust code should:
         + ...be indented with 4 spaces
         + ...not end files with trailing whitespace
         + ...follow the [Rust naming conventions](https://github.com/rust-lang/rust/tree/master/src/doc/style/style/)
-+ Use [comma-first style](https://gist.github.com/isaacs/357981) for all comma-delimited constructs.
 + Not exceed 80 characters per line.
 
 ### Tools to Assist With Coding Style
