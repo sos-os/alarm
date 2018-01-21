@@ -1,6 +1,6 @@
 //! A typed slab allocator suitable for use with `#![no_std]`.
 #![no_std]
-#![feature(unique)]
+#![feature(ptr_internals)]
 
 use core::ptr::Unique;
 
