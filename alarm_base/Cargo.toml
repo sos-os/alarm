@@ -2,3 +2,12 @@
 name = "alarm_base"
 version = "0.0.1"
 authors = ["Eliza Weisman <eliza@buoyant.io>"]
+
+[features]
+default = ["lend"]
+lend = ["spin"]
+std = []
+
+[dependencies.spin]
+optional = true
+version = "0.4.6"

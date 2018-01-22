@@ -3,7 +3,6 @@ use alloc::allocator::AllocErr;
 
 /// An allocator that provides page frames.
 pub unsafe trait Allocator {
-
     /// Architecture-dependent size of a physical page.
     const FRAME_SIZE: usize;
 
@@ -25,5 +24,4 @@ pub unsafe trait Allocator {
 
     // TODO: alloc_range/dealloc_range; requires an architecture-independent
     //       way of representing frame ranges.
-
 }
