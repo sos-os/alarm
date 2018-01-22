@@ -69,13 +69,15 @@ pub trait Linked: Sized // + Drop
         mem::replace(self.links_mut(), Links::new())
     }
 
-    /// Borrow the `next` element in the list, or `None` if this is the last.
+    /// Borrow the `next` element in the list, or `None` if this is the
+    /// last.
     #[inline]
     fn next(&self) -> Option<&Self> {
         self.links().next()
     }
 
-    /// Borrow the `prev` element in the list, or `None` if this is the first.
+    /// Borrow the `prev` element in the list, or `None` if this is the
+    /// first.
     #[inline]
     fn prev(&self) -> Option<&Self> {
         self.links().prev()
@@ -97,27 +99,39 @@ pub trait Linked: Sized // + Drop
 
     /// Borrow the `next` linked element, or `None` if this is the last.
     #[inline]
-    fn peek_next<T>(&self) -> Option<&T> where Self: AsRef<T> {
+    fn peek_next<T>(&self) -> Option<&T>
+    where
+        Self: AsRef<T>,
+    {
         self.next().map(Self::as_ref)
     }
 
     /// Borrow the `prev` linked element, or `None` if this is the first.
     #[inline]
-    fn peek_prev<T>(&self) -> Option<&T> where Self: AsRef<T> {
+    fn peek_prev<T>(&self) -> Option<&T>
+    where
+        Self: AsRef<T>,
+    {
         self.prev().map(Self::as_ref)
     }
 
     /// Mutably borrow the `next` linked element, or `None` if this is the
     /// last.
     #[inline]
-    fn peek_next_mut<T>(&mut self) -> Option<&mut T> where Self: AsMut<T> {
+    fn peek_next_mut<T>(&mut self) -> Option<&mut T>
+    where
+        Self: AsMut<T>,
+    {
         self.next_mut().map(Self::as_mut)
     }
 
     /// Mutably borrow the `prev` linked element, or `None` if this is the
     /// first.
     #[inline]
-    fn peek_prev_mut<T>(&mut self) -> Option<&mut T> where Self: AsMut<T> {
+    fn peek_prev_mut<T>(&mut self) -> Option<&mut T>
+    where
+        Self: AsMut<T>,
+    {
         self.prev_mut().map(Self::as_mut)
     }
 }
@@ -380,6 +394,38 @@ where
     #[inline]
     pub fn pop_back(&mut self) -> Option<T> {
         self.pop_back_node().map(|b| (*b).into())
+    }
+}
+
+#[cfg(any(feature = "std", test))]
+use core::iter::Extend;
+
+#[cfg(any(feature = "alloc", feature = "std", test))]
+impl<T, Node> Extend<T> for List<T, Node, Box<Node>>
+where
+    Node: From<T> + Linked,
+{
+    #[inline]
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        for item in iter {
+            self.push_back(item);
+        }
+    }
+}
+
+#[cfg(any(feature = "std", test))]
+use core::iter::FromIterator;
+
+#[cfg(any(feature = "alloc", feature = "std", test))]
+impl<T, Node> FromIterator<T> for List<T, Node, Box<Node>>
+where
+    Node: From<T> + Linked,
+{
+    #[inline]
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut list = List::new();
+        list.extend(iter);
+        list
     }
 }
 

@@ -4,7 +4,7 @@
 //  Copyright (c) 2015-2017 Eliza Weisman
 //  Released under the terms of the MIT license. See `LICENSE` in the root
 //  directory of this repository for more information.
-//
+// 
 
 use super::*;
 use super::Linked;
@@ -16,6 +16,8 @@ pub struct NumberedNode {
     pub number: usize,
     links: Links<NumberedNode>,
 }
+
+pub type NumberedList = List<usize, NumberedNode, Box<NumberedNode>>;
 
 impl NumberedNode {
     pub fn new(number: usize) -> Self {
@@ -78,8 +80,7 @@ mod boxed {
 
         #[test]
         fn not_empty_after_first_push() {
-            let mut list =
-                List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list = NumberedList::new();
 
             assert_eq!(list.head(), None);
             assert_eq!(list.tail(), None);
@@ -94,8 +95,7 @@ mod boxed {
 
         #[test]
         fn contents_after_first_push() {
-            let mut list =
-                List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list = NumberedList::new();
             assert_eq!(list.head(), None);
             assert_eq!(list.tail(), None);
 
@@ -107,8 +107,7 @@ mod boxed {
 
         #[test]
         fn head_tail_equal_after_first_push() {
-            let mut list =
-                List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list = NumberedList::new();
             assert_eq!(list.head(), list.tail());
 
             list.push_front_node(Box::new(NumberedNode::new(444)));
@@ -118,8 +117,7 @@ mod boxed {
 
         #[test]
         fn head_tail_not_equal_after_second_push() {
-            let mut list =
-                List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list = NumberedList::new();
 
             list.push_front_node(Box::new(NumberedNode::new(444)));
             list.push_front_node(Box::new(NumberedNode::new(555)));
@@ -130,7 +128,7 @@ mod boxed {
 
     #[test]
     fn head_tail_not_same_second_push() {
-        let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+        let mut list = NumberedList::new();
         let a = 444;
         let b = 555;
 
@@ -142,7 +140,7 @@ mod boxed {
 
     quickcheck! {
         fn push_front_node_order(x: usize, xs: Vec<usize>) -> TestResult {
-            let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list = NumberedList::new();
             list.push_front_node(Box::new(NumberedNode::new(x)));
             let mut result = TestResult::passed();
             for x_2 in xs {
@@ -156,7 +154,7 @@ mod boxed {
         }
 
         fn not_empty_after_push(n: usize) -> bool {
-            let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list = NumberedList::new();
 
             assert_eq!(list.head(), None);
             assert_eq!(list.tail(), None);
@@ -167,11 +165,10 @@ mod boxed {
             list.push_front(n);
 
             !list.is_empty() && list.len() == 1
-
         }
 
         fn contents_after_first_push(n: usize) -> bool {
-            let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list = NumberedList::new();
             assert_eq!(list.head(), None);
             assert_eq!(list.tail(), None);
             list.push_front(n);
@@ -180,7 +177,7 @@ mod boxed {
         }
 
         fn linked_peek_prev_next(a: usize, b: usize) -> bool {
-            let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+            let mut list = NumberedList::new();
 
             list.push_back(a);
             list.push_back(b);
@@ -190,11 +187,29 @@ mod boxed {
             && list.tail().unwrap().peek_prev() == Some(&a)
             && list.tail().unwrap().peek_next() == None
         }
+
+        fn extend_sum_len(ys: Vec<usize>, xs: Vec<usize>) -> bool {
+            let mut list = NumberedList::new();
+            let total = ys.len() + xs.len();
+            for y in ys {
+                list.push_back(y);
+            }
+            list.extend(xs);
+
+            list.len() == total
+        }
+
+        fn from_iter_len(xs: Vec<usize>) -> bool {
+            let lx = xs.len();
+            let list = NumberedList::from_iter(xs);
+
+            list.len() == lx
+        }
     }
 
     #[test]
     fn contents_after_push_nodes() {
-        let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+        let mut list = NumberedList::new();
 
         list.push_front_node(Box::new(NumberedNode::new(0)));
         list.push_front_node(Box::new(NumberedNode::new(1)));
@@ -215,7 +230,7 @@ mod boxed {
 
     #[test]
     fn test_pop_front_node() {
-        let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+        let mut list = NumberedList::new();
 
         assert_eq!(list.head(), None);
         assert_eq!(list.tail(), None);
@@ -252,7 +267,7 @@ mod boxed {
 
     #[test]
     fn test_pop_back_node() {
-        let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+        let mut list = NumberedList::new();
 
         assert_eq!(list.head(), None);
         assert_eq!(list.tail(), None);
@@ -289,7 +304,7 @@ mod boxed {
 
     #[test]
     fn test_pop_front() {
-        let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+        let mut list = NumberedList::new();
 
         assert_eq!(list.head(), None);
         assert_eq!(list.tail(), None);
@@ -326,7 +341,7 @@ mod boxed {
 
     #[test]
     fn test_pop_back() {
-        let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
+        let mut list = NumberedList::new();
 
         assert_eq!(list.head(), None);
         assert_eq!(list.tail(), None);
@@ -359,5 +374,32 @@ mod boxed {
 
         assert!(list.is_empty());
         assert_eq!(list.pop_back(), None);
+    }
+
+    #[test]
+    fn test_extend() {
+        let mut list = NumberedList::new();
+
+        list.push_back(0);
+        list.push_back(1);
+
+        assert_eq!(list.tail().unwrap().number, 1);
+        assert_eq!(list.head().unwrap().number, 0);
+
+        let ext = vec![3, 4];
+        list.extend(ext);
+
+        assert_eq!(list.tail().unwrap().number, 4);
+        assert_eq!(list.head().unwrap().number, 0);
+    }
+
+    #[test]
+    fn test_fromiter() {
+        let list_a = (0..10).into_iter();
+        let mut nlist = NumberedList::from_iter(list_a);
+
+        for i in 0..10 {
+            assert_eq!(nlist.pop_front().unwrap(), i);
+        }
     }
 }
