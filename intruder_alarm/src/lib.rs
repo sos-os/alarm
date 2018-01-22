@@ -43,7 +43,7 @@ extern crate alloc;
 use core::{fmt, mem};
 use core::default::Default;
 use core::ops::Deref;
-use core::ptr::Shared;
+use core::ptr::NonNull;
 
 pub mod doubly;
 
@@ -65,10 +65,10 @@ pub unsafe trait OwningRef<T: ?Sized>: Deref<Target = T> {
     unsafe fn from_ptr(p: *const Self::Target) -> Self;
 }
 
-/// A `Link` provides an [`Option`]-like interface to a [`Shared`] pointer.
+/// A `Link` provides an [`Option`]-like interface to a [`NonNull`] pointer.
 ///
 ///
-pub struct Link<T: ?Sized>(Option<Shared<T>>);
+pub struct Link<T: ?Sized>(Option<NonNull<T>>);
 
 // ===== impl OwningRef =====
 
@@ -178,7 +178,7 @@ impl<T: ?Sized> Link<T> {
     where
         R: OwningRef<T>,
     {
-        Link(Shared::new(reference.into_ptr() as *mut _))
+        Link(NonNull::new(reference.into_ptr() as *mut _))
     }
 }
 
@@ -199,20 +199,20 @@ impl<T> Default for Link<T> {
 
 impl<T: ?Sized> Copy for Link<T>
 where
-    Option<Shared<T>>: Copy,
+    Option<NonNull<T>>: Copy,
 {
 }
 // impl<'a, T> From<&'a T> for Link<T> {
 //     #[inline]
 //     fn from(reference: &'a T) -> Self {
-//         Link(Some(Shared::from(reference)))
+//         Link(Some(NonNull::from(reference)))
 //     }
 // }
 
 // impl<'a, T> From<&'a mut T> for Link<T> {
 //     #[inline]
 //     fn from(reference: &'a mut T) -> Self {
-//         Link(Some(Shared::from(reference)))
+//         Link(Some(NonNull::from(reference)))
 //     }
 // }
 
@@ -227,7 +227,7 @@ where
 
 // {
 //     fn from(reference: R) -> Self {
-//         Link(Shared::new(reference.into_ptr() as *mut _))
+//         Link(NonNull::new(reference.into_ptr() as *mut _))
 //     }
 // }
 
