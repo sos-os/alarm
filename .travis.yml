@@ -1,5 +1,14 @@
 language: rust
 rust: nightly
 
+env:
+- FEATURES="std"
+- FEATURES=""
+
 script:
-- cargo test
+- cd intruder_alarm
+# we have to cd into the dir rather than using cargo test -p
+# since cargo test -p won't pass feature flags.
+- cargo test --features=$FEATURES
+- cd ..
+- cargo test --features=$FEATURES
