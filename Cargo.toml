@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "alarm_base",
     "intruder_alarm",
     "slabby",
 ]
