@@ -5,6 +5,7 @@ authors = ["Eliza Weisman <eliza@buoyant.io>"]
 
 [features]
 std = []
+alloc = []
 
 [dev-dependencies]
 quickcheck = "0.4.1"
