@@ -25,7 +25,13 @@
 //! + `std`: use the Rust standard library (`std`), rather than `core`.
 #![crate_name = "intruder_alarm"]
 #![crate_type = "lib"]
-#![cfg_attr(not(test), no_std)]
+// Use `no_std` attribute unless we are running tests or compiling with
+// the "std" feature.
+#![cfg_attr(
+    not(any(test, feature = "std")),
+    no_std
+)]
+#![cfg_attr(feature = "alloc", feature(alloc))]
 #![feature(shared)]
 #![feature(const_fn)]
 #![deny(missing_docs)]
@@ -35,7 +41,7 @@
 extern crate quickcheck;
 
 #[cfg(any(feature = "std", test))]
-use std as core;
+extern crate core;
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -94,10 +100,13 @@ unsafe impl<'a, T: ?Sized> OwningRef<T> for &'a mut T {
     }
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(all(
+    feature = "alloc",
+    not(any(feature = "std", test))
+))]
 use alloc::boxed::Box;
 #[cfg(any(feature = "std", test))]
-use core::boxed::Box;
+use std::boxed::Box;
 
 #[cfg(any(feature = "alloc", feature = "std", test))]
 unsafe impl<T: ?Sized> OwningRef<T> for Box<T> {
