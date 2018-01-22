@@ -4,7 +4,7 @@
 //  Copyright (c) 2015-2017 Eliza Weisman
 //  Released under the terms of the MIT license. See `LICENSE` in the root
 //  directory of this repository for more information.
-// 
+//
 
 use super::*;
 use super::Linked;
@@ -31,11 +31,25 @@ impl Linked for NumberedNode {
     fn links(&self) -> &Links<Self> {
         &self.links
     }
+
     #[inline]
     fn links_mut(&mut self) -> &mut Links<Self> {
         &mut self.links
     }
 }
+
+impl AsRef<usize> for NumberedNode {
+    fn as_ref(&self) -> &usize {
+        &self.number
+    }
+}
+
+impl AsMut<usize> for NumberedNode {
+    fn as_mut(&mut self) -> &mut usize {
+        &mut self.number
+    }
+}
+
 impl PartialEq for NumberedNode {
     fn eq(&self, rhs: &Self) -> bool {
         self.number == rhs.number
@@ -53,12 +67,15 @@ impl Into<usize> for NumberedNode {
         self.number
     }
 }
+
 mod boxed {
     use super::*;
     use std::boxed::Box;
+
     mod push_node {
         use super::*;
         use std::boxed::Box;
+
         #[test]
         fn not_empty_after_first_push() {
             let mut list =
@@ -124,7 +141,6 @@ mod boxed {
     }
 
     quickcheck! {
-
         fn push_front_node_order(x: usize, xs: Vec<usize>) -> TestResult {
             let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
             list.push_front_node(Box::new(NumberedNode::new(x)));
@@ -163,38 +179,16 @@ mod boxed {
             list.head().unwrap().number == n
         }
 
-        fn head_tail_same_first_push(n: usize) -> bool {
+        fn linked_peek_prev_next(a: usize, b: usize) -> bool {
             let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
 
-            list.push_front(n);
+            list.push_back(a);
+            list.push_back(b);
 
-            list.head() == list.tail()
-        }
-
-        // fn head_tail_not_same_second_push(a: usize, b: usize) -> TestResult {
-        //     if a == b {
-        //         return TestResult::discard()
-        //     };
-        //     let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
-
-        //     list.push_front(a);
-        //     list.push_front(b);
-
-        //     TestResult::from_bool(list.head().unwrap() != list.tail().unwrap())
-        // }
-
-        fn push_front_order(x: usize, xs: Vec<usize>) -> TestResult {
-            let mut list = List::<usize, NumberedNode, Box<NumberedNode>>::new();
-            list.push_front(x);
-            let mut result = TestResult::passed();
-            for x_2 in xs {
-                list.push_front(x_2);
-                result = TestResult::from_bool(
-                    list.tail().unwrap().number == x &&
-                    list.head().unwrap().number == x_2
-                );
-            }
-            result
+            list.head().unwrap().peek_prev() == None
+            && list.head().unwrap().peek_next() == Some(&b)
+            && list.tail().unwrap().peek_prev() == Some(&a)
+            && list.tail().unwrap().peek_next() == None
         }
     }
 

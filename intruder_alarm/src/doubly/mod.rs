@@ -69,15 +69,13 @@ pub trait Linked: Sized // + Drop
         mem::replace(self.links_mut(), Links::new())
     }
 
-    /// Borrow the `next` element in the list, or `None` if this is the
-    /// last.
+    /// Borrow the `next` element in the list, or `None` if this is the last.
     #[inline]
     fn next(&self) -> Option<&Self> {
         self.links().next()
     }
 
-    /// Borrow the `prev` element in the list, or `None` if this is the
-    /// first.
+    /// Borrow the `prev` element in the list, or `None` if this is the first.
     #[inline]
     fn prev(&self) -> Option<&Self> {
         self.links().prev()
@@ -95,6 +93,32 @@ pub trait Linked: Sized // + Drop
     #[inline]
     fn prev_mut(&mut self) -> Option<&mut Self> {
         self.links_mut().prev_mut()
+    }
+
+    /// Borrow the `next` linked element, or `None` if this is the last.
+    #[inline]
+    fn peek_next<T>(&self) -> Option<&T> where Self: AsRef<T> {
+        self.next().map(Self::as_ref)
+    }
+
+    /// Borrow the `prev` linked element, or `None` if this is the first.
+    #[inline]
+    fn peek_prev<T>(&self) -> Option<&T> where Self: AsRef<T> {
+        self.prev().map(Self::as_ref)
+    }
+
+    /// Mutably borrow the `next` linked element, or `None` if this is the
+    /// last.
+    #[inline]
+    fn peek_next_mut<T>(&mut self) -> Option<&mut T> where Self: AsMut<T> {
+        self.next_mut().map(Self::as_mut)
+    }
+
+    /// Mutably borrow the `prev` linked element, or `None` if this is the
+    /// first.
+    #[inline]
+    fn peek_prev_mut<T>(&mut self) -> Option<&mut T> where Self: AsMut<T> {
+        self.prev_mut().map(Self::as_mut)
     }
 }
 
