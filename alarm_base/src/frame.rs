@@ -21,7 +21,7 @@ pub unsafe trait Allocator {
     /// # Unsafety
     /// This function is unsafe because undefined behaviour may result if the
     /// given `frame` was not originally allocated by this `Allocator`.
-    unsafe fn deallocate(&mut self, frame: Self::Frame);
+    unsafe fn dealloc(&mut self, frame: Self::Frame)  -> Result<(), AllocErr>;
 
     // TODO: alloc_range/dealloc_range; requires an architecture-independent
     //       way of representing frame ranges.
