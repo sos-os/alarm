@@ -32,9 +32,14 @@
     no_std
 )]
 #![cfg_attr(feature = "alloc", feature(alloc))]
+#![cfg_attr(
+    any(feature = "alloc", feature = "std", test),
+    feature(box_into_raw_non_null)
+)]
 #![feature(shared)]
 #![feature(const_fn)]
 #![deny(missing_docs)]
+
 
 #[cfg(test)]
 #[macro_use]
@@ -127,6 +132,60 @@ unsafe impl<T: ?Sized> OwningRef<T> for Box<T> {
 }
 
 // ===== impl UnsafeRef =====
+
+
+#[cfg(any(feature = "alloc", feature = "std", test))]
+impl<T: ?Sized> UnsafeRef<T> {
+
+    /// Convert a `Box<T>` into an `UnsafeRef<T>`.
+    ///
+    /// # Note
+    /// This is primarily only useful for testing `UnsafeRef` --- if you are
+    /// in an environment where you can easily allocate `Box`es, it is
+    /// much safer to simply use the `OwningRef` impl for `Box`. Typically,
+    /// `UnsafeRef` should only be used when there is no allocator capable
+    /// of allocating `Box`es.
+    #[inline]
+    #[cfg_attr(
+        not(test),
+        deprecated(note = "Use of `UnsafeRef` is likely to be unnecessary \
+                           when `Box` is available.")
+    )]
+    pub fn from_box(b: Box<T>) -> Self {
+        unsafe { UnsafeRef(Box::into_raw_non_null(b)) }
+    }
+
+    /// Construct a new `UnsafeRef` from a `T`, using `Box::new` to allocate a
+    /// memory location for the moved value.
+    ///
+    /// Observant readers will note that this is essentially the only way to
+    /// construct an `UnsafeRef` from a *moved* value, rather than from a
+    /// reference --- this is by design. In order to construct an `UnsafeRef`
+    /// for a moved value, space in memory must be allocated to contain that
+    /// value. If we cannot create `Box`es, than we have no way of allocating
+    /// a memory location for a moved value, and we can only construct
+    /// `UnsafeRef`s from fixed memory locations.
+    ///
+    /// # Note
+    /// This is primarily only useful for testing `UnsafeRef` --- if you are
+    /// in an environment where you can easily allocate `Box`es, it is
+    /// much safer to simply use the `OwningRef` impl for `Box`. Typically,
+    /// `UnsafeRef` should only be used when there is no allocator capable
+    /// of allocating `Box`es.
+    #[inline]
+    #[cfg_attr(
+        not(test),
+        deprecated(note = "Use of `UnsafeRef` is likely to be unnecessary \
+                           when `Box` is available.")
+    )]
+    pub fn boxed(t: T) -> Self
+    where
+        T: Sized,
+    {
+       UnsafeRef::from_box(Box::new(t))
+    }
+
+}
 
 impl<T: ?Sized> Deref for UnsafeRef<T> {
     type Target = T;
