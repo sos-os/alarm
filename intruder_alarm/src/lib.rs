@@ -248,6 +248,16 @@ unsafe impl<T: ?Sized> OwningRef<T> for UnsafeRef<T> {
     }
 }
 
+impl<T: ?Sized> PartialEq for UnsafeRef<T>
+where
+    T: PartialEq
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.as_ref() == other.as_ref()
+    }
+
+}
+
 // ===== impl Link =====
 
 impl<T: ?Sized> Link<T> {
