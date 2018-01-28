@@ -103,10 +103,30 @@ pub trait CursorMut<'a, T: 'a>: Cursor<Item = &'a mut T> {
 
 }
 
+/// Conversion into a `Cursor``.
+///
+/// By implementing `IntoCursor` for a type, you define how it will be
+/// converted to a `Cursor`. This is common for types which describe a
+/// collection of some kind.
+///
+/// ...yes, it's just `IntoIterator` for `Cursor`s.
+pub trait IntoCursor {
+
+    /// The type of the elements "under" the cursor.
+    type Item;
+
+    /// Which kind of cursor are we turning this into?
+    type IntoCursor: Cursor<Item=Self::Item>;
+
+    /// Create a cursor from a value.
+    fn into_iter(self) -> Self::IntoCursor;
+
+}
+
 // ===== impl Cursor =====
 
-impl<T> Iterator for Cursor<Item = T>{
-    type Item = T;
+impl<I> Iterator for Cursor<Item = I>{
+    type Item = I;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -115,12 +135,27 @@ impl<T> Iterator for Cursor<Item = T>{
 
 }
 
-impl<T> DoubleEndedIterator for Cursor<Item = T> {
+impl<I> DoubleEndedIterator for Cursor<Item = I> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.prev_item()
     }
 
 }
+
+// ===== impl IntoCursor =====
+// TODO: trait object woes
+// impl<I, C> IntoIterator for IntoCursor<Item = I, IntoCursor = C>
+// where
+//     C: Iterator<Item = I>,
+// {
+//     type Item = I;
+//     type IntoIter = C;
+//
+//     fn into_iter(self) -> Self::IntoIter {
+//         self.into_cursor()
+//     }
+//
+// }
 
 
