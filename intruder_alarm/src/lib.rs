@@ -46,9 +46,10 @@ extern crate core;
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-use core::{fmt, mem};
+use core::borrow::Borrow;
 use core::default::Default;
-use core::ops::Deref;
+use core::{fmt, mem};
+use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 
 pub mod cursor;
@@ -72,6 +73,9 @@ pub unsafe trait OwningRef<T: ?Sized>: Deref<Target = T> {
     /// Convert a raw pointer into an owning reference.
     unsafe fn from_ptr(p: *const Self::Target) -> Self;
 }
+
+/// An unsafe `OwningRef` backed by a [`NonNull`] pointer.
+pub struct UnsafeRef<T: ?Sized>(NonNull<T>);
 
 /// A `Link` provides an [`Option`]-like interface to a [`NonNull`] pointer.
 ///
@@ -119,6 +123,71 @@ unsafe impl<T: ?Sized> OwningRef<T> for Box<T> {
     #[inline]
     unsafe fn from_ptr(p: *const T) -> Self {
         Box::from_raw(p as *mut T)
+    }
+}
+
+// ===== impl UnsafeRef =====
+
+impl<T: ?Sized> Deref for UnsafeRef<T> {
+    type Target = T;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        unsafe { self.0.as_ref() }
+    }
+}
+
+impl<T: ?Sized> DerefMut for UnsafeRef<T> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { self.0.as_mut() }
+    }
+}
+
+impl<T: ?Sized> AsRef<T> for UnsafeRef<T> {
+    #[inline]
+    fn as_ref(&self) -> &T {
+        unsafe { self.0.as_ref() }
+    }
+}
+
+impl<T: ?Sized> Borrow<T> for UnsafeRef<T> {
+    #[inline]
+    fn borrow(&self) -> &T {
+        self.as_ref()
+    }
+}
+
+impl<T: ?Sized> fmt::Debug for UnsafeRef<T>
+where
+    T: fmt::Debug
+{
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.as_ref().fmt(f)
+    }
+}
+
+impl<T: ?Sized, F> From<F> for UnsafeRef<T>
+where
+    NonNull<T>: From<F>,
+{
+    #[inline]
+    fn from(f: F) -> Self {
+        UnsafeRef(NonNull::from(f))
+    }
+}
+
+unsafe impl<T: ?Sized> OwningRef<T> for UnsafeRef<T> {
+    #[inline]
+    fn into_ptr(self) -> *const T {
+       self.0.as_ptr() as *const T
+    }
+    #[inline]
+    unsafe fn from_ptr(p: *const T) -> Self {
+        NonNull::new(p as *mut T)
+            .map(UnsafeRef)
+            .expect("attempted to create OwningRef from null pointer!")
     }
 }
 
