@@ -206,6 +206,37 @@ mod boxed {
 
             list.len() == lx
         }
+
+        fn collect_from_iter_equivalent(xs: Vec<usize>) -> bool {
+            let mut list1 = NumberedList::from_iter(xs.clone());
+            let mut list2 = xs.clone().into_iter().collect::<NumberedList>();
+
+            let mut result = list1.len() == list2.len();
+            for _ in 0..list1.len() {
+                result = result && (
+                    list1.pop_front() == list2.pop_front()
+                );
+            }
+            result
+        }
+
+        fn collect_and_loop_push_equivalent(xs: Vec<usize>) -> bool {
+            let mut list1 = NumberedList::new();
+
+            for x in xs.clone() {
+                list1.push_back(x);
+            }
+
+            let mut list2 = xs.clone().into_iter().collect::<NumberedList>();
+
+            let mut result = list1.len() == list2.len();
+            for _ in 0..list1.len() {
+                result = result && (
+                    list1.pop_front() == list2.pop_front()
+                );
+            }
+            result
+        }
     }
 
     #[test]
@@ -556,6 +587,53 @@ mod unsafe_ref {
             let list = UnsafeList::from_iter(xs);
 
             list.len() == lx
+        }
+
+        fn collect_from_iter_equivalent(xs: Vec<usize>) -> bool {
+
+            let xs1 = xs.clone().into_iter()
+                .map(|i| UnsafeRef::boxed(NumberedNode::from(i)))
+                .collect::<Vec<_>>();
+            let xs2 = xs.clone().into_iter()
+                .map(|i| UnsafeRef::boxed(NumberedNode::from(i)))
+                .collect::<Vec<_>>();
+
+            let mut list1 = UnsafeList::from_iter(xs1);
+            let mut list2 = xs2.into_iter().collect::<UnsafeList>();
+
+            let mut result = list1.len() == list2.len();
+            for _ in 0..list1.len() {
+                result = result && (
+                    list1.pop_front_node() == list2.pop_front_node()
+                );
+            }
+            result
+        }
+
+        fn collect_and_loop_push_equivalent(xs: Vec<usize>) -> bool {
+            let xs1 = xs.clone().into_iter()
+                .map(|i| UnsafeRef::boxed(NumberedNode::from(i)))
+                .collect::<Vec<_>>();
+            let xs2 = xs.clone().into_iter()
+                .map(|i| UnsafeRef::boxed(NumberedNode::from(i)))
+                .collect::<Vec<_>>();
+
+            let mut list1 = UnsafeList::new();
+
+            for x in xs1 {
+                list1.push_back(x);
+            }
+
+            let mut list2 = xs2.into_iter().collect::<UnsafeList>();
+
+            let mut result = list1.len() == list2.len();
+            for _ in 0..list1.len() {
+                result = result && (
+                    list1.pop_front_node().unwrap().number ==
+                    list2.pop_front_node().unwrap().number
+                );
+            }
+            result
         }
     }
 
