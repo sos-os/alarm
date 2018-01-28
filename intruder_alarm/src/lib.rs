@@ -186,6 +186,13 @@ impl<T: ?Sized> UnsafeRef<T> {
     }
 
 }
+impl<T: ?Sized> Clone for UnsafeRef<T> {
+
+    #[inline]
+    fn clone(&self) -> Self {
+        UnsafeRef(self.0)
+    }
+}
 
 impl<T: ?Sized> Deref for UnsafeRef<T> {
     type Target = T;
