@@ -51,6 +51,8 @@ use core::default::Default;
 use core::ops::Deref;
 use core::ptr::NonNull;
 
+pub mod cursor;
+pub use self::cursor::{Cursor, CursorMut};
 pub mod doubly;
 
 /// Trait for references which own their referent.
