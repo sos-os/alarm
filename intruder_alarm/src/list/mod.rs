@@ -7,7 +7,8 @@
 //! use intrusive lists in code that runs without the kernel memory allocator,
 //! like the allocator implementation itself, since each list element manages
 //! its own memory.
-use super::{Link, OwningRef, UnsafeRef};
+use ::{Link, OwningRef, UnsafeRef, cursor};
+
 use core::iter::{Extend, FromIterator};
 use core::marker::PhantomData;
 use core::mem;
@@ -143,6 +144,13 @@ pub trait Linked: Sized // + Drop
 pub struct Links<T> {
     pub(super) next: Link<T>,
     pub(super) prev: Link<T>,
+}
+
+/// A read-only cursor over the elements of a `List`.
+#[derive(Debug)]
+pub struct Cursor<'a, T: 'a, N: 'a> {
+    current: Option<&'a N>,
+    _elem_ty: PhantomData<T>,
 }
 
 //-----------------------------------------------------------------------------
@@ -324,6 +332,15 @@ where
     #[inline]
     pub fn back(&self) -> Option<&T> {
         self.tail().map(Node::as_ref)
+    }
+
+    /// Return an immutable `Cursor` over the items of this `List`.
+    pub fn cursor<'a>(&'a self) -> Cursor<'a, T, Node> {
+        Cursor {
+            current: self.head.as_ref(),
+            _elem_ty: PhantomData,
+
+        }
     }
 }
 
@@ -513,5 +530,35 @@ impl<T> Clone for Links<T> {
     #[inline]
     fn clone(&self) -> Self {
         Links::new()
+    }
+}
+
+// ===== impl Cursor =====
+
+impl<'a, T, Node> cursor::Cursor for Cursor<'a, T, Node>
+where
+    Node: Linked,
+    Node: AsRef<T>,
+{
+    type Item = &'a T;
+
+    fn move_forward(&mut self) {
+        self.current = self.current.and_then(Linked::next);
+    }
+
+    fn move_back(&mut self) {
+        self.current = self.current.and_then(Linked::prev);
+    }
+
+    fn get(&self) -> Option<Self::Item> {
+        self.current.map(AsRef::as_ref)
+    }
+
+    fn peek_next(&self) -> Option<Self::Item> {
+        self.current.and_then(Linked::next).map(AsRef::as_ref)
+    }
+
+    fn peek_back(&self) -> Option<Self::Item> {
+        self.current.and_then(Linked::prev).map(AsRef::as_ref)
     }
 }

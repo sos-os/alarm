@@ -74,6 +74,56 @@ mod boxed {
 
     pub type NumberedList = List<usize, NumberedNode, Box<NumberedNode>>;
 
+    mod cursor {
+        use super::*;
+        use ::Cursor;
+        use quickcheck::TestResult;
+
+        quickcheck! {
+            fn cursor_empty_after_n_iterations(xs: Vec<usize>) -> TestResult {
+                let mut list = NumberedList::new();
+                for x in xs {
+                    list.push_back(x);
+                }
+                let mut cursor = list.cursor();
+
+                if !list.is_empty() {
+                    // if the list is not empty, try to cursor over it.
+                    for _ in 0..list.len() - 1 {
+                        if cursor.next_item().is_none() {
+                            return TestResult::failed();
+                        }
+                    }
+                }
+
+                if cursor.next_item().is_some() {
+                    return TestResult::failed();
+                }
+
+                TestResult::passed()
+
+            }
+
+            fn cursor_same_as_vec_iterator(xs: Vec<usize>) -> TestResult {
+                let mut list = NumberedList::new();
+                for x in xs.clone() {
+                    list.push_back(x);
+                }
+                let mut cursor = list.cursor();
+
+                // if the list is not empty, try to cursor over it.
+                for x in &xs {
+                    if cursor.next_item().unwrap() != x {
+                        return TestResult::failed();
+                    }
+                }
+
+                TestResult::passed()
+
+            }
+        }
+    }
+
     mod push_node {
         use super::*;
         use std::boxed::Box;
