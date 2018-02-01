@@ -9,7 +9,7 @@
 //
 //! Cursors allowing bi-directional traversal of data structures.
 //!
-use core::iter::{self, Iterator, DoubleEndedIterator};
+use core::iter::{self, DoubleEndedIterator, Iterator};
 
 //-----------------------------------------------------------------------------
 // Traits
@@ -47,23 +47,25 @@ pub trait Cursor {
     /// Return a reference to the next element from the cursor's position.
     fn peek_next(&self) -> Option<Self::Item>;
 
-    /// Return a reference to the previous element from the cursor's position.
+    /// Return a reference to the previous element from the cursor's
+    /// position.
     fn peek_back(&self) -> Option<Self::Item>;
 
-    /// Advance the cursor one element and return a reference to that element.
+    /// Advance the cursor one element and return a reference to that
+    /// element.
     #[inline]
     fn next_item(&mut self) -> Option<Self::Item> {
         self.move_forward();
         self.get()
     }
 
-    /// Move the cursor back one element and return a reference to that element.
+    /// Move the cursor back one element and return a reference to that
+    /// element.
     #[inline]
     fn prev_item(&mut self) -> Option<Self::Item> {
         self.move_back();
         self.get()
     }
-
 }
 
 /// A cursor that can mutate the parent data structure.
@@ -100,7 +102,6 @@ pub trait CursorMut<'a, T: 'a>: Cursor<Item = &'a mut T> {
     /// Insert the given item after the cursor's position.
     // TODO: ops::Place impl?
     fn insert_after(&mut self, item: T);
-
 }
 
 /// Conversion into a `Cursor``.
@@ -111,28 +112,25 @@ pub trait CursorMut<'a, T: 'a>: Cursor<Item = &'a mut T> {
 ///
 /// ...yes, it's just `IntoIterator` for `Cursor`s.
 pub trait IntoCursor {
-
     /// The type of the elements "under" the cursor.
     type Item;
 
     /// Which kind of cursor are we turning this into?
-    type IntoCursor: Cursor<Item=Self::Item>;
+    type IntoCursor: Cursor<Item = Self::Item>;
 
     /// Create a cursor from a value.
     fn into_iter(self) -> Self::IntoCursor;
-
 }
 
 // ===== impl Cursor =====
 
-impl<I> Iterator for Cursor<Item = I>{
+impl<I> Iterator for Cursor<Item = I> {
     type Item = I;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.next_item()
     }
-
 }
 
 impl<I> DoubleEndedIterator for Cursor<Item = I> {
@@ -140,7 +138,6 @@ impl<I> DoubleEndedIterator for Cursor<Item = I> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.prev_item()
     }
-
 }
 
 // ===== impl IntoCursor =====
@@ -157,5 +154,3 @@ impl<I> DoubleEndedIterator for Cursor<Item = I> {
 //     }
 //
 // }
-
-

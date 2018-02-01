@@ -27,19 +27,13 @@
 #![crate_type = "lib"]
 // Use `no_std` attribute unless we are running tests or compiling with
 // the "std" feature.
-#![cfg_attr(
-    not(any(test, feature = "std")),
-    no_std
-)]
+#![cfg_attr(not(any(test, feature = "std")), no_std)]
 #![cfg_attr(feature = "alloc", feature(alloc))]
-#![cfg_attr(
-    any(feature = "alloc", feature = "std", test),
-    feature(box_into_raw_non_null)
-)]
+#![cfg_attr(any(feature = "alloc", feature = "std", test),
+            feature(box_into_raw_non_null))]
 #![feature(shared)]
 #![feature(const_fn)]
 #![deny(missing_docs)]
-
 
 #[cfg(test)]
 #[macro_use]
@@ -51,9 +45,9 @@ extern crate core;
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+use core::{fmt, mem};
 use core::borrow::Borrow;
 use core::default::Default;
-use core::{fmt, mem};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 
@@ -112,10 +106,7 @@ unsafe impl<'a, T: ?Sized> OwningRef<T> for &'a mut T {
     }
 }
 
-#[cfg(all(
-    feature = "alloc",
-    not(any(feature = "std", test))
-))]
+#[cfg(all(feature = "alloc", not(any(feature = "std", test))))]
 use alloc::boxed::Box;
 #[cfg(any(feature = "std", test))]
 use std::boxed::Box;
@@ -134,10 +125,8 @@ unsafe impl<T: ?Sized> OwningRef<T> for Box<T> {
 
 // ===== impl UnsafeRef =====
 
-
 #[cfg(any(feature = "alloc", feature = "std", test))]
 impl<T: ?Sized> UnsafeRef<T> {
-
     /// Convert a `Box<T>` into an `UnsafeRef<T>`.
     ///
     /// # Note
@@ -147,11 +136,9 @@ impl<T: ?Sized> UnsafeRef<T> {
     /// `UnsafeRef` should only be used when there is no allocator capable
     /// of allocating `Box`es.
     #[inline]
-    #[cfg_attr(
-        not(test),
-        deprecated(note = "Use of `UnsafeRef` is likely to be unnecessary \
-                           when `Box` is available.")
-    )]
+    #[cfg_attr(not(test),
+               deprecated(note = "Use of `UnsafeRef` is likely to be unnecessary \
+                                  when `Box` is available."))]
     pub fn from_box(b: Box<T>) -> Self {
         unsafe { UnsafeRef(Box::into_raw_non_null(b)) }
     }
@@ -174,21 +161,17 @@ impl<T: ?Sized> UnsafeRef<T> {
     /// `UnsafeRef` should only be used when there is no allocator capable
     /// of allocating `Box`es.
     #[inline]
-    #[cfg_attr(
-        not(test),
-        deprecated(note = "Use of `UnsafeRef` is likely to be unnecessary \
-                           when `Box` is available.")
-    )]
+    #[cfg_attr(not(test),
+               deprecated(note = "Use of `UnsafeRef` is likely to be unnecessary \
+                                  when `Box` is available."))]
     pub fn boxed(t: T) -> Self
     where
         T: Sized,
     {
-       UnsafeRef::from_box(Box::new(t))
+        UnsafeRef::from_box(Box::new(t))
     }
-
 }
 impl<T: ?Sized> Clone for UnsafeRef<T> {
-
     #[inline]
     fn clone(&self) -> Self {
         UnsafeRef(self.0)
@@ -227,7 +210,7 @@ impl<T: ?Sized> Borrow<T> for UnsafeRef<T> {
 
 impl<T: ?Sized> fmt::Debug for UnsafeRef<T>
 where
-    T: fmt::Debug
+    T: fmt::Debug,
 {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -248,7 +231,7 @@ where
 unsafe impl<T: ?Sized> OwningRef<T> for UnsafeRef<T> {
     #[inline]
     fn into_ptr(self) -> *const T {
-       self.0.as_ptr() as *const T
+        self.0.as_ptr() as *const T
     }
     #[inline]
     unsafe fn from_ptr(p: *const T) -> Self {
@@ -260,12 +243,11 @@ unsafe impl<T: ?Sized> OwningRef<T> for UnsafeRef<T> {
 
 impl<T: ?Sized> PartialEq for UnsafeRef<T>
 where
-    T: PartialEq
+    T: PartialEq,
 {
     fn eq(&self, other: &Self) -> bool {
         self.as_ref() == other.as_ref()
     }
-
 }
 
 // ===== impl Link =====

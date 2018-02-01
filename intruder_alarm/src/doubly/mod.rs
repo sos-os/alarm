@@ -8,7 +8,6 @@
 //! like the allocator implementation itself, since each list element manages
 //! its own memory.
 use super::{Link, OwningRef, UnsafeRef};
-
 use core::iter::{Extend, FromIterator};
 use core::marker::PhantomData;
 use core::mem;
@@ -361,7 +360,7 @@ where
     #[inline]
     pub fn push_front<I>(&mut self, item: I) -> &mut Self
     where
-        I: Into<UnsafeRef<Node>>
+        I: Into<UnsafeRef<Node>>,
     {
         self.push_front_node(item.into())
     }
@@ -370,21 +369,16 @@ where
     #[inline]
     pub fn push_back<I>(&mut self, item: I) -> &mut Self
     where
-        I: Into<UnsafeRef<Node>>
+        I: Into<UnsafeRef<Node>>,
     {
         self.push_back_node(item.into())
     }
 }
 
-
-#[cfg(all(
-    feature = "alloc",
-    not(any(feature = "std", test))
-))]
+#[cfg(all(feature = "alloc", not(any(feature = "std", test))))]
 use alloc::boxed::Box;
 #[cfg(any(feature = "std", test))]
 use std::boxed::Box;
-
 
 #[cfg(any(feature = "alloc", feature = "std", test))]
 impl<T, Node> List<T, Node, Box<Node>>
@@ -424,7 +418,6 @@ where
     }
 }
 
-
 #[cfg(any(feature = "alloc", feature = "std", test))]
 impl<T, Node> Extend<T> for List<T, Node, Box<Node>>
 where
@@ -453,7 +446,7 @@ where
 
 impl<T, Node, Ref, E> FromIterator<E> for List<T, Node, Ref>
 where
-    Self: Extend<E>
+    Self: Extend<E>,
 {
     #[inline]
     fn from_iter<I: IntoIterator<Item = E>>(iter: I) -> Self {

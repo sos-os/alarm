@@ -4,7 +4,7 @@
 //  Copyright (c) 2015-2017 Eliza Weisman
 //  Released under the terms of the MIT license. See `LICENSE` in the root
 //  directory of this repository for more information.
-// 
+//
 
 use super::*;
 use super::Linked;
@@ -30,7 +30,9 @@ impl NumberedNode {
 
 impl Linked for NumberedNode {
     #[inline]
-    fn next(&self) -> &Link<Self> { &self.next }
+    fn next(&self) -> &Link<Self> {
+        &self.next
+    }
 
     #[inline]
     fn next_mut(&mut self) -> &mut Link<Self> {

@@ -74,7 +74,6 @@ mod boxed {
 
     pub type NumberedList = List<usize, NumberedNode, Box<NumberedNode>>;
 
-
     mod push_node {
         use super::*;
         use std::boxed::Box;
@@ -436,19 +435,16 @@ mod boxed {
     }
 }
 
-
-
 mod unsafe_ref {
     use super::*;
     use UnsafeRef;
 
     pub type UnsafeList = List<usize, NumberedNode, UnsafeRef<NumberedNode>>;
 
-
     mod push_node {
         use super::*;
-        use std::boxed::Box;
         use UnsafeRef;
+        use std::boxed::Box;
 
         #[test]
         fn not_empty_after_first_push() {
@@ -818,7 +814,7 @@ mod unsafe_ref {
 
         let ext = vec![
             UnsafeRef::boxed(NumberedNode::from(3)),
-            UnsafeRef::boxed(NumberedNode::from(4))
+            UnsafeRef::boxed(NumberedNode::from(4)),
         ];
         list.extend(ext);
 
@@ -828,7 +824,8 @@ mod unsafe_ref {
 
     #[test]
     fn test_fromiter() {
-        let list_a = (0..10).into_iter()
+        let list_a = (0..10)
+            .into_iter()
             .map(|i| UnsafeRef::boxed(NumberedNode::from(i)));
         let mut nlist = UnsafeList::from_iter(list_a);
 

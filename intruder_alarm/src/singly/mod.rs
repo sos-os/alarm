@@ -184,14 +184,10 @@ where
     }
 }
 
-#[cfg(all(
-    feature = "alloc",
-    not(any(feature = "std", test))
-))]
+#[cfg(all(feature = "alloc", not(any(feature = "std", test))))]
 use alloc::boxed::Box;
 #[cfg(any(feature = "std", test))]
 use std::boxed::Box;
-
 
 #[cfg(any(feature = "alloc", feature = "std", test))]
 impl<T, Node> List<T, Node, Box<Node>>

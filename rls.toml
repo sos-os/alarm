@@ -1,3 +1,0 @@
-# support for Cargo workspaces is currently unstable.
-unstable_features = true
-workspace_mode = true
