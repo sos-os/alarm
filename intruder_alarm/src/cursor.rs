@@ -1,4 +1,3 @@
-//
 // ••• ALARM: the SOS memory allocator
 // --- by Eliza Weisman (eliza@elizas.website)
 // ••• and the SOS contributors
@@ -129,7 +128,9 @@ impl<I> Iterator for Cursor<Item = I> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.next_item()
+        let item = self.get();
+        self.move_forward();
+        item
     }
 }
 
