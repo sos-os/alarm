@@ -60,6 +60,7 @@ use core::ptr::NonNull;
 pub mod cursor;
 pub use self::cursor::{Cursor, CursorMut};
 pub mod doubly;
+pub mod singly;
 
 /// Trait for references which own their referent.
 ///
