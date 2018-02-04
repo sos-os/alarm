@@ -1,4 +1,5 @@
-//! An intrusive linked list implementation using `RawLink`s modified as singly.
+//! A stack using an intrusive linked list implementation of `RawLink`s
+//! modified as singly.
 //!
 //! An _intrusive_ list is a list structure wherein the type of element stored
 //! in the list holds references to other nodes. This means that we don't have
@@ -19,32 +20,32 @@ mod tests;
 //-----------------------------------------------------------------------------
 // Public API types
 //-----------------------------------------------------------------------------
-//  List
-/// An intrusive singly-linked list.
+//  Stack
+/// A stack implementation using an intrusive singly-linked list.
 ///
 /// This type is a wrapper around a series of [`Node`]s. It stores [`Link`]s
-/// to the head [`Node`]s and the length of the list.
+/// to the head/top [`Node`]s and the size of the stack (a.k.a len of the list).
 ///
-/// `FromIterator` will return a new list in reverse order because
-/// singly-linked list only provides stack operations.
+/// `FromIterator` will return a new stack (list) in reverse order because this
+/// is a stack.
 ///
 /// # Type parameters
 /// - `T`: the type of the items stored by each `N`
-/// - `N`: the type of nodes in the list
+/// - `N`: the type of nodes in the stack
 /// - `R`: the type of [`OwningRef`] that owns each `N`.
 ///
 /// [`Node`]: trait.Node.html
 /// [`Link`]: ../struct.Link.html
 /// [`OwningRef]: ../trait.OwningRef.html
 #[derive(Default)]
-pub struct List<T, N, R> {
-    /// Link to the head node of the list.
-    head: Link<N>,
+pub struct Stack<T, N, R> {
+    /// Link to the top node of the stack.
+    top: Link<N>,
 
-    /// Length of the list.
-    len: usize,
+    /// Size of the stack.
+    size: usize,
 
-    /// Type marker for items stored in the list.
+    /// Type marker for items stored in the stack.
     _elem_ty: PhantomData<T>,
 
     /// Type marker for the `OwningRef` type.
@@ -53,7 +54,7 @@ pub struct List<T, N, R> {
 
 //  Linked
 /// Trait that must be implemented in order to be a member of an intrusive
-/// singly linked list.
+/// linked list.
 pub trait Linked: Sized {
     /// Borrow this element's next [`Link`].
     ///
@@ -75,125 +76,123 @@ pub trait Linked: Sized {
 // Implementations
 //-----------------------------------------------------------------------------
 
-// ===== impl List =====
+// ===== impl Stack =====
 
-impl<T, Node, R> List<T, Node, R> {
-    /// Create a new `List` with 0 elements.
+impl<T, Node, R> Stack<T, Node, R> {
+    /// Create a new `Stack` with 0 elements.
     pub const fn new() -> Self {
-        List {
-            head: Link::none(),
-            len: 0,
+        Stack {
+            top: Link::none(),
+            size: 0,
             _elem_ty: PhantomData,
             _ref_ty: PhantomData,
         }
     }
 
-    /// Returns the length of the list.
+    /// Returns the size of the stack.
     #[inline]
-    pub fn len(&self) -> usize {
-        self.len
+    pub fn size(&self) -> usize {
+        self.size
     }
 
-    /// Returns true if the list is empty, false otherwise.
+    /// Returns true if the stack is empty, false otherwise.
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.len == 0
+        self.size == 0
     }
 
-    /// Borrows the first node of the list as an `Option`.
-    ///
-    /// Note that this is distinct from `front`: this method
-    /// borrows the head _node_, not the head _element_.
+    /// Borrows the first node of the stack as an `Option`.
+    /// Note that it borrows the head _node_, not the head _element_.
     ///
     /// # Returns
-    ///   - `Some(&N)` if the list has elements
-    ///   - `None` if the list is empty.
+    ///   - `Some(&N)` if the stack has elements
+    ///   - `None` if the stack is empty.
     #[inline]
     pub fn peek(&self) -> Option<&Node> {
-        self.head.as_ref()
+        self.top.as_ref()
     }
 
-    /// Mutably borrows the head node of the list as an `Option`
+    /// Mutably borrows the tpp node of the stack as an `Option`
     ///
     /// # Returns
-    ///   - `Some(&mut Node)` if the list has elements
-    ///   - `None` if the list is empty.
+    ///   - `Some(&mut Node)` if the stack has elements
+    ///   - `None` if the stack is empty.
     #[inline]
     pub fn peek_mut(&mut self) -> Option<&mut Node> {
-        self.head.as_mut()
+        self.top.as_mut()
     }
 }
 
-impl<T, Node, Ref> List<T, Node, Ref>
+impl<T, Node, Ref> Stack<T, Node, Ref>
 where
     Node: Linked,
     Ref: OwningRef<Node>,
     Ref: DerefMut,
 {
-    /// Push a node to the list.
+    /// Push a node on to the stack.
     pub fn push_node(&mut self, mut node: Ref) -> &mut Self {
         unsafe {
-            *node.next_mut() = self.head;
+            *node.next_mut() = self.top;
             let node = Link::from_owning_ref(node);
-            self.head = node;
-            self.len += 1;
+            self.top = node;
+            self.size += 1;
         };
         self
     }
 }
 
-impl<T, Node, Ref> List<T, Node, Ref>
+impl<T, Node, Ref> Stack<T, Node, Ref>
 where
     Node: Linked,
     Ref: OwningRef<Node>,
 {
-    /// Pop a node from the list.
+    /// Pop a node from the stack.
     pub fn pop_node(&mut self) -> Option<Ref> {
         unsafe {
-            self.head.as_ptr().map(|node| {
-                self.head = (*node).take_next();
-                self.len -= 1;
+            self.top.as_ptr().map(|node| {
+                self.top = (*node).take_next();
+                self.size -= 1;
                 Ref::from_ptr(node as *const Node)
             })
         }
     }
 }
 
-impl<T, Node, R> List<T, Node, R>
+impl<T, Node, R> Stack<T, Node, R>
 where
     Node: AsRef<T>,
 {
-    /// Borrows the head item of the list as an `Option`
+    /// Borrows the top item of the stack as an `Option`
     ///
     /// # Returns
-    ///   - `Some(&T)` if the list has elements
-    ///   - `None` if the list is empty.
+    ///   - `Some(&T)` if the stack has elements
+    ///   - `None` if the stack is empty.
     #[inline]
-    pub fn front(&self) -> Option<&T> {
+    pub fn top(&self) -> Option<&T> {
         self.peek().map(Node::as_ref)
     }
 }
 
-impl<T, Node, R> List<T, Node, R>
+impl<T, Node, R> Stack<T, Node, R>
 where
     Node: AsMut<T>,
 {
-    /// Mutably borrows the head element of the list as an `Option`
+    /// Mutably borrows the top element of the stack as an `Option`
     ///
     /// # Returns
-    ///   - `Some(&mut T)` if the list has elements
-    ///   - `None` if the list is empty.
+    ///   - `Some(&mut T)` if the stack has elements
+    ///   - `None` if the stack is empty.
     #[inline]
-    pub fn head_mut(&mut self) -> Option<&mut T> {
+    pub fn top_mut(&mut self) -> Option<&mut T> {
         self.peek_mut().map(Node::as_mut)
     }
 }
 
-impl<T, Node> List<T, Node, UnsafeRef<Node>>
+impl<T, Node> Stack<T, Node, UnsafeRef<Node>>
 where
     Node: Linked,
 {
-    /// Push an item to the front of the list.
+    /// Push an item on to the top of the stack.
     #[inline]
     pub fn push<I>(&mut self, item: I) -> &mut Self
     where
@@ -209,12 +208,12 @@ use alloc::boxed::Box;
 use std::boxed::Box;
 
 #[cfg(any(feature = "alloc", feature = "std", test))]
-impl<T, Node> List<T, Node, Box<Node>>
+impl<T, Node> Stack<T, Node, Box<Node>>
 where
     Node: From<T>,
     Node: Linked,
 {
-    /// Push an item to the list.
+    /// Push an item on to the stack.
     #[inline]
     pub fn push(&mut self, item: T) -> &mut Self {
         self.push_node(Box::new(Node::from(item)))
@@ -222,12 +221,12 @@ where
 }
 
 #[cfg(any(feature = "alloc", feature = "std", test))]
-impl<T, Node> List<T, Node, Box<Node>>
+impl<T, Node> Stack<T, Node, Box<Node>>
 where
     Node: Linked,
     Node: Into<T>,
 {
-    /// Pop an item from the list.
+    /// Pop an item from the stack.
     #[inline]
     pub fn pop(&mut self) -> Option<T> {
         self.pop_node().map(|b| (*b).into())
@@ -235,7 +234,7 @@ where
 }
 
 #[cfg(any(feature = "alloc", feature = "std", test))]
-impl<T, Node> Extend<T> for List<T, Node, Box<Node>>
+impl<T, Node> Extend<T> for Stack<T, Node, Box<Node>>
 where
     Node: From<T> + Linked,
 {
@@ -247,7 +246,7 @@ where
     }
 }
 
-impl<T, Node, R> Extend<R> for List<T, Node, UnsafeRef<Node>>
+impl<T, Node, R> Extend<R> for Stack<T, Node, UnsafeRef<Node>>
 where
     R: Into<UnsafeRef<Node>>,
     Node: Linked,
@@ -260,14 +259,14 @@ where
     }
 }
 
-impl<T, Node, Ref, E> FromIterator<E> for List<T, Node, Ref>
+impl<T, Node, Ref, E> FromIterator<E> for Stack<T, Node, Ref>
 where
     Self: Extend<E>,
 {
     #[inline]
     fn from_iter<I: IntoIterator<Item = E>>(iter: I) -> Self {
-        let mut list = List::new();
-        list.extend(iter);
-        list
+        let mut stack = Stack::new();
+        stack.extend(iter);
+        stack
     }
 }
