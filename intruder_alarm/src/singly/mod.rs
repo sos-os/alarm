@@ -7,10 +7,12 @@
 //! use intrusive lists in code that runs without the kernel memory allocator,
 //! like the allocator implementation itself, since each list element manages
 //! its own memory.
-use super::{Link, OwningRef};
+use super::{Link, OwningRef, UnsafeRef};
+use core::iter::{Extend, FromIterator};
 use core::marker::PhantomData;
 use core::mem;
 use core::ops::DerefMut;
+
 #[cfg(test)]
 mod tests;
 
@@ -184,6 +186,20 @@ where
     }
 }
 
+impl<T, Node> List<T, Node, UnsafeRef<Node>>
+where
+    Node: Linked,
+{
+    /// Push an item to the front of the list.
+    #[inline]
+    pub fn push<I>(&mut self, item: I) -> &mut Self
+    where
+        I: Into<UnsafeRef<Node>>,
+    {
+        self.push_node(item.into())
+    }
+}
+
 #[cfg(all(feature = "alloc", not(any(feature = "std", test))))]
 use alloc::boxed::Box;
 #[cfg(any(feature = "std", test))]
@@ -212,5 +228,43 @@ where
     #[inline]
     pub fn pop(&mut self) -> Option<T> {
         self.pop_node().map(|b| (*b).into())
+    }
+}
+
+#[cfg(any(feature = "alloc", feature = "std", test))]
+impl<T, Node> Extend<T> for List<T, Node, Box<Node>>
+where
+    Node: From<T> + Linked,
+{
+    #[inline]
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        for item in iter {
+            self.push(item);
+        }
+    }
+}
+
+impl<T, Node, R> Extend<R> for List<T, Node, UnsafeRef<Node>>
+where
+    R: Into<UnsafeRef<Node>>,
+    Node: Linked,
+{
+    #[inline]
+    fn extend<I: IntoIterator<Item = R>>(&mut self, iter: I) {
+        for item in iter {
+            self.push(item);
+        }
+    }
+}
+
+impl<T, Node, Ref, E> FromIterator<E> for List<T, Node, Ref>
+where
+    Self: Extend<E>,
+{
+    #[inline]
+    fn from_iter<I: IntoIterator<Item = E>>(iter: I) -> Self {
+        let mut list = List::new();
+        list.extend(iter);
+        list
     }
 }
