@@ -25,6 +25,9 @@ mod tests;
 /// This type is a wrapper around a series of [`Node`]s. It stores [`Link`]s
 /// to the head [`Node`]s and the length of the list.
 ///
+/// `FromIterator` will return a new list in reverse order because
+/// singly-linked list only provides stack operations.
+///
 /// # Type parameters
 /// - `T`: the type of the items stored by each `N`
 /// - `N`: the type of nodes in the list
