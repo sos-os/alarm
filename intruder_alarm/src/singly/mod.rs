@@ -20,13 +20,10 @@ mod tests;
 // Public API types
 //-----------------------------------------------------------------------------
 //  List
-/// An intrusive singly-linked list mainly for stack operations.
+/// An intrusive singly-linked list.
 ///
 /// This type is a wrapper around a series of [`Node`]s. It stores [`Link`]s
 /// to the head [`Node`]s and the length of the list.
-///
-/// `FromIterator` will return a new list in reverse order because
-/// singly-linked list only provides stack operations.
 ///
 /// # Type parameters
 /// - `T`: the type of the items stored by each `N`
