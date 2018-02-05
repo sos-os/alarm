@@ -123,11 +123,11 @@ mod boxed {
             assert_eq!(list.peek(), None);
 
             assert!(list.is_empty());
-            assert_eq!(list.size(), 0);
+            assert_eq!(list.len(), 0);
 
             list.push(n);
 
-            !list.is_empty() && list.size() == 1
+            !list.is_empty() && list.len() == 1
         }
 
         fn contents_after_first_push(n: usize) -> bool {
@@ -276,11 +276,11 @@ mod unsafe_ref {
 
             assert_eq!(list.peek(), None);
             assert!(list.is_empty());
-            assert_eq!(list.size(), 0);
+            assert_eq!(list.len(), 0);
 
             list.push_node(UnsafeRef::boxed(NumberedNode::from(n)));
 
-            !list.is_empty() && list.size() == 1
+            !list.is_empty() && list.len() == 1
         }
 
         fn contents_after_first_push(n: usize) -> bool {
@@ -300,7 +300,7 @@ mod unsafe_ref {
             list.peek().unwrap().peek_next() == Some(&b)
         }*/
 
-        fn extend_sum_size(ys: Vec<usize>, xs: Vec<usize>) -> bool {
+        fn extend_sum_len(ys: Vec<usize>, xs: Vec<usize>) -> bool {
             let mut list = UnsafeList::new();
             let total = ys.len() + xs.len();
             let ys = ys.into_iter()
@@ -316,17 +316,17 @@ mod unsafe_ref {
 
             list.extend(xs);
 
-            list.size() == total
+            list.len() == total
         }
 
-        fn from_iter_size(xs: Vec<usize>) -> bool {
+        fn from_iter_len(xs: Vec<usize>) -> bool {
             let lx = xs.len();
             let xs = xs.into_iter()
                 .map(|i| UnsafeRef::boxed(NumberedNode::from(i)))
                 .collect::<Vec<_>>();
             let list = UnsafeList::from_iter(xs);
 
-            list.size() == lx
+            list.len() == lx
         }
 
         fn collect_from_iter_equivalent(xs: Vec<usize>) -> bool {
@@ -341,8 +341,8 @@ mod unsafe_ref {
             let mut list1 = UnsafeList::from_iter(xs1);
             let mut list2 = xs2.into_iter().collect::<UnsafeList>();
 
-            let mut result = list1.size() == list2.size();
-            for _ in 0..list1.size() {
+            let mut result = list1.len() == list2.len();
+            for _ in 0..list1.len() {
                 result = result && (
                     list1.pop_node() == list2.pop_node()
                 );
@@ -366,8 +366,8 @@ mod unsafe_ref {
 
             let mut list2 = xs2.into_iter().collect::<UnsafeList>();
 
-            let mut result = list1.size() == list2.size();
-            for _ in 0..list1.size() {
+            let mut result = list1.len() == list2.len();
+            for _ in 0..list1.len() {
                 result = result && (
                     list1.pop_node().unwrap().number ==
                     list2.pop_node().unwrap().number
