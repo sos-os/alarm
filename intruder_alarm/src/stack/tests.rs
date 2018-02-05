@@ -290,16 +290,6 @@ mod unsafe_ref {
             list.peek().unwrap().number == n
         }
 
-        /*fn linked_peek_prev_next(a: usize, b: usize) -> bool {
-            let mut list = UnsafeList::new();
-
-            list.push_node(UnsafeRef::boxed(NumberedNode::from(a)));
-            list.push_node(UnsafeRef::boxed(NumberedNode::from(b)));
-
-            list.peek().unwrap().peek_prev() == None
-            list.peek().unwrap().peek_next() == Some(&b)
-        }*/
-
         fn extend_sum_len(ys: Vec<usize>, xs: Vec<usize>) -> bool {
             let mut list = UnsafeList::new();
             let total = ys.len() + xs.len();
