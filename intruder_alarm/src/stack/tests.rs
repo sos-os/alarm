@@ -84,12 +84,12 @@ mod boxed {
 
             assert_eq!(list.peek(), None);
             assert!(list.is_empty());
-            assert_eq!(list.size(), 0);
+            assert_eq!(list.len(), 0);
 
             list.push_node(Box::new(NumberedNode::new(1)));
 
             assert_eq!(list.is_empty(), false);
-            assert_eq!(list.size(), 1);
+            assert_eq!(list.len(), 1);
         }
 
         #[test]
@@ -238,12 +238,12 @@ mod unsafe_ref {
 
             assert_eq!(list.peek(), None);
             assert!(list.is_empty());
-            assert_eq!(list.size(), 0);
+            assert_eq!(list.len(), 0);
 
             list.push_node(UnsafeRef::boxed(NumberedNode::new(1)));
 
             assert_eq!(list.is_empty(), false);
-            assert_eq!(list.size(), 1);
+            assert_eq!(list.len(), 1);
         }
 
         #[test]

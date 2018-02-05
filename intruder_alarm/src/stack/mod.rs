@@ -91,7 +91,7 @@ impl<T, Node, R> Stack<T, Node, R> {
 
     /// Returns the size of the stack.
     #[inline]
-    pub fn size(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.size
     }
 
