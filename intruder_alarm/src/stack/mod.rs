@@ -43,7 +43,7 @@ pub struct Stack<T, N, R> {
     top: Link<N>,
 
     /// Size of the stack.
-    size: usize,
+    len: usize,
 
     /// Type marker for items stored in the stack.
     _elem_ty: PhantomData<T>,
@@ -83,7 +83,7 @@ impl<T, Node, R> Stack<T, Node, R> {
     pub const fn new() -> Self {
         Stack {
             top: Link::none(),
-            size: 0,
+            len: 0,
             _elem_ty: PhantomData,
             _ref_ty: PhantomData,
         }
@@ -92,13 +92,13 @@ impl<T, Node, R> Stack<T, Node, R> {
     /// Returns the size of the stack.
     #[inline]
     pub fn len(&self) -> usize {
-        self.size
+        self.len
     }
 
     /// Returns true if the stack is empty, false otherwise.
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.size == 0
+        self.len == 0
     }
 
     /// Borrows the first node of the stack as an `Option`.
@@ -135,7 +135,7 @@ where
             *node.next_mut() = self.top;
             let node = Link::from_owning_ref(node);
             self.top = node;
-            self.size += 1;
+            self.len += 1;
         };
         self
     }
@@ -151,7 +151,7 @@ where
         unsafe {
             self.top.as_ptr().map(|node| {
                 self.top = (*node).take_next();
-                self.size -= 1;
+                self.len -= 1;
                 Ref::from_ptr(node as *const Node)
             })
         }
