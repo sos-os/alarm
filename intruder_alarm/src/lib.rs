@@ -53,7 +53,7 @@ use core::ptr::NonNull;
 
 pub mod cursor;
 pub use self::cursor::{Cursor, CursorMut};
-pub mod doubly;
+pub mod list;
 pub mod stack;
 
 /// Trait for references which own their referent.
