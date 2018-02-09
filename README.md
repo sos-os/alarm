@@ -1,7 +1,7 @@
 ALARM: Another Library for Allocating and Releasing Memory
 ==========================================================
 
-[![Build Status](https://travis-ci.org/hawkw/alarm.svg?branch=master)](https://travis-ci.org/hawkw/alarm)
+[![Build Status](https://travis-ci.org/sos-os/alarm.svg?branch=master)](https://travis-ci.org/sos-os/alarm)
 
 ALARM ~is~ _will be_ the new [SOS](https://github.com/hawkw/sos-kernel) memory allocator.
 
