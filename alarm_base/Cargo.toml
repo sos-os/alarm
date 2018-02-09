@@ -2,6 +2,9 @@
 name = "alarm_base"
 version = "0.0.1"
 authors = ["Eliza Weisman <eliza@buoyant.io>"]
+description = """
+Base types and API definitions shared across ALARM allocators.
+"""
 
 [features]
 default = ["lend"]
