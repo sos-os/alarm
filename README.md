@@ -7,11 +7,21 @@ ALARM ~is~ _will be_ the new [SOS](https://github.com/hawkw/sos-kernel) memory a
 
 **NOTE:** ALARM is currently _very_ early in the development process and most functionality has yet to be implemented.
 
+Crates
+------
+
+| Crate             | Description                                                       |
+|-------------------|-------------------------------------------------------------------|
+| `alarm_base`      | Base types and API definitions shared across ALARM allocators.    |
+| `intruder_alarm`  | Intrusive collections library used for allocator data structures. |
+| `slabby`          | Slab allocators composable on top of ALARM allocators.            |
+
+
 
 Building ALARM
 --------------
 
-Building ALARM requires the [nightly Rust compiler](https://doc.rust-lang.org/book/first-edition/release-channels.html), which you can install using [`rustup`](https://www.rustup.rs/). 
+Building ALARM requires the [nightly Rust compiler](https://doc.rust-lang.org/book/first-edition/release-channels.html), which you can install using [`rustup`](https://www.rustup.rs/).
 
 Although some components of ALARM may also be compatible with the stable Rust compiler, the core functionality of this library as a memory allocator introduces a hard dependency on the [`allocator_api`](https://github.com/rust-lang/rfcs/blob/master/text/1398-kinds-of-allocators.md) language feature, currently only available on the nightly compiler.
 

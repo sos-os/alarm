@@ -2,5 +2,8 @@
 name = "slabby"
 version = "0.0.1"
 authors = ["Eliza Weisman <eliza@buoyant.io>"]
+description = """
+Slab allocators composable on top of ALARM memory allocators.
+"""
 
 [dependencies]
