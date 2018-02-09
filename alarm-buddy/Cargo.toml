@@ -1,0 +1,7 @@
+[package]
+name = "alarm-buddy"
+version = "0.1.0"
+authors = ["Eliza Weisman <eliza@buoyant.io>"]
+
+[dependencies]
+alarm_base = { path = "../alarm-base" }
