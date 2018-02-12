@@ -12,20 +12,12 @@
 //! or, "So You've Always Wished `*mut u8` Could `impl Drop`..."
 use alloc::allocator::{Alloc, AllocErr, Layout};
 use core::{mem, ops, ptr};
-use spin;
 
 /// An allocator that can provide borrowed handles.
-pub trait Lend {
-    /// The type of the allocator providing the allocation.
-    ///
-    /// This has to be an associated type rather than `Self`
-    /// so that `Lend` can be implemented for e.g. `Mutex<A>`.
-    type Allocator: Alloc;
+pub trait Lend: Alloc + Sized {
 
     /// Borrow an allocation for a `T` from this lender.
-    fn borrow<'a, T>(
-        &'a self,
-    ) -> Result<Borrowed<'a, T, Self::Allocator>, AllocErr>;
+    fn borrow<T>(self) -> Result<Borrowed<T, Self>, AllocErr>;
 }
 
 /// A borrowed handle on a heap allocation with a specified lifetime.
@@ -36,46 +28,42 @@ pub trait Lend {
 /// is dropped.
 ///
 /// # Type Parameters
-/// - `'alloc`: the lifetime of the allocator from which this object was
-///             recieved.
 /// - `T`: the type of the allocated value
 /// - `A`: the type of the allocator from which `T` was received.
-pub struct Borrowed<'alloc, T, A>
+pub struct Borrowed<T, A>
 where
-    A: Alloc + 'alloc,
+    A: Alloc
 {
     /// The allocated value this `Borrowed` handle owns.
     value: ptr::NonNull<T>,
 
     /// A reference to the allocator that provided us with T.
-    allocator: &'alloc ::spin::Mutex<A>,
+    allocator: A
 }
 
 // ===== impl Lend =====
 
-impl<A> Lend for spin::Mutex<A>
+impl<A> Lend for A
 where
     A: Alloc,
 {
-    type Allocator = A;
 
     /// Borrow an allocation for a `T` from this lender.
-    fn borrow<'a, T>(
-        &'a self,
-    ) -> Result<Borrowed<'a, T, Self::Allocator>, AllocErr> {
-        let value = self.lock().alloc_one::<T>();
-        value.map(|value| Borrowed {
-            value,
-            allocator: self,
-        })
+    fn borrow<T>(mut self) -> Result<Borrowed<T, Self>, AllocErr> {
+        self
+            .alloc_one::<T>()
+            .map(|value| Borrowed {
+                value,
+                allocator: self,
+            })
     }
 }
 
 // ===== impl Borrowed =====
 
-impl<'alloc, T, A> ops::Deref for Borrowed<'alloc, T, A>
+impl<T, A> ops::Deref for Borrowed<T, A>
 where
-    A: Alloc + 'alloc,
+    A: Alloc
 {
     type Target = T;
 
@@ -85,9 +73,9 @@ where
     }
 }
 
-impl<'alloc, T, A> ops::DerefMut for Borrowed<'alloc, T, A>
+impl<T, A> ops::DerefMut for Borrowed<T, A>
 where
-    A: Alloc + 'alloc,
+    A: Alloc
 {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
@@ -95,9 +83,9 @@ where
     }
 }
 
-impl<'alloc, T, A> Drop for Borrowed<'alloc, T, A>
+impl<T, A> Drop for Borrowed<T, A>
 where
-    A: Alloc + 'alloc,
+    A: Alloc
 {
     fn drop(&mut self) {
         let address = self.value.as_ptr();
@@ -107,7 +95,7 @@ where
         mem::drop(address);
         unsafe {
             // lock the allocator and deallocate the object.
-            self.allocator.lock().dealloc(address as *mut _, layout)
+            self.allocator.dealloc(address as *mut _, layout)
         }
     }
 }
