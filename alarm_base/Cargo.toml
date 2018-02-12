@@ -8,9 +8,8 @@ Base types and API definitions shared across ALARM allocators.
 
 [features]
 default = ["lend"]
-lend = ["spin"]
+lend = []
 std = []
 
 [dependencies.spin]
-optional = true
 version = "0.4.6"
