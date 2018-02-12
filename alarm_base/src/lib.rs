@@ -15,7 +15,6 @@
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate core;
-#[cfg(feature = "lend")]
 extern crate spin;
 
 pub mod frame;
@@ -23,3 +22,49 @@ pub mod frame;
 pub mod lend;
 
 pub use self::frame::Allocator as FrameAllocator;
+use alloc::allocator::{Alloc, AllocErr, Layout};
+
+/// An allocator behind a mutex.
+#[derive(Debug)]
+pub struct LockedAlloc<A>(spin::Mutex<A>);
+
+// ===== impl LockedAlloc =====
+
+impl<A> core::ops::Deref for LockedAlloc<A> {
+    type Target = spin::Mutex<A>;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+unsafe impl<'a, A> Alloc for &'a LockedAlloc<A>
+where
+    A: Alloc,
+{
+    unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
+        self.lock().alloc(layout)
+    }
+
+    unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
+        self.lock().dealloc(ptr, layout)
+    }
+}
+
+unsafe impl<'a, A> FrameAllocator for &'a LockedAlloc<A>
+where
+    A: FrameAllocator,
+{
+    type Frame = A::Frame;
+    const FRAME_SIZE: usize = A::FRAME_SIZE;
+
+    unsafe fn alloc(&mut self) -> Result<Self::Frame, AllocErr> {
+        self.lock().alloc()
+    }
+
+    unsafe fn dealloc(&mut self, frame: Self::Frame) -> Result<(), AllocErr> {
+        self.lock().dealloc(frame)
+    }
+}
+
