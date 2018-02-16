@@ -122,6 +122,18 @@ where
         let size = self.block_size(layout)?;
         Ok(size.log2() - self.min_block_size_log2)
     }
+
+    fn refill(&mut self) -> Result<(), AllocErr> {
+        // Calculate the order of the free list to push a new frame to.
+        // TODO: can we assume the max size is always equal to the frame size?
+        //       if so, we can just always use the highest order...
+        let order =
+            self.block_order(Layout::from_size_align(F::FRAME_SIZE, 1))?;
+        let new_frame = self.frames.alloc()?;
+        self.push_block(*mut new_frame, order);
+        Ok(())
+
+    }
 }
 
 
