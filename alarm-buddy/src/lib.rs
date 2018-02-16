@@ -22,6 +22,10 @@ use alloc::allocator::{AllocErr, Layout};
 
 pub type FreeList = List<FreeBlock, FreeBlock, UnsafeRef<FreeBlock>>;
 
+mod log2;
+
+use self::log2::Log2;
+
 /// A free block header.
 pub struct FreeBlock {
     links: Links<FreeBlock>
@@ -111,6 +115,12 @@ where
         }
 
         Ok(size)
+    }
+
+    /// Compute the order of the free list for a given `Layout`.
+    pub fn block_order(&self, layout: &Layout) -> Result<usize, AllocErr> {
+        let size = self.block_size(layout)?;
+        Ok(size.log2() - self.min_block_size_log2)
     }
 }
 
