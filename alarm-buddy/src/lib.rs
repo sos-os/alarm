@@ -14,12 +14,12 @@ extern crate alarm_base;
 extern crate intruder_alarm;
 extern crate spin;
 
-use alarm_base::FrameAllocator;
+use alarm_base::{AllocResult, FrameAllocator};
 
 use intruder_alarm::list::{List, Linked, Links};
 use intruder_alarm::UnsafeRef;
 
-use alloc::allocator::{AllocErr, Layout};
+use alloc::allocator::{Alloc, AllocErr, Layout};
 
 pub type FreeList = List<FreeBlock, FreeBlock, UnsafeRef<FreeBlock>>;
 
@@ -141,10 +141,43 @@ where
         let frame_ptr: *mut u8 = &mut new_frame as *mut F::Frame as *mut _;
         self.push_block(frame_ptr, order);
         Ok(())
-
     }
+
+    /// Allocate a block for the given order.
+    ///
+    /// This is the core of the buddy-block allocation algorithm. Here's
+    /// a simple description of how it works:
+    ///
+    /// 1. Let _o_ be the desired order for the allocation.
+    /// 2. Find a free block with order _o_. If found, return that block.
+    /// 3. Otherwise, find a free block with order _x_ > o, minimizing x.
+    ///   - If found:
+    ///     - Split the block in two, creating two free blocks with order
+    ///       _x_-1. These two blocks are called order-(_x_-1) buddies, because
+    ///       they are adjacent blocks with order _x_-1, and the address of one
+    ///       is easily calculated from the address of the other.
+    //      - Repeat step 2.
+    ///   - If there’s no larger free block, the allocation fails: return OOM.
+    pub fn allocate_order(&mut self, order: usize) -> AllocResult<*mut u8> {
+        unimplemented!()
+    }
+
 }
 
+unsafe impl<'a, F> Alloc for Heap<'a, F>
+where
+    F: FrameAllocator,
+{
+
+    unsafe fn alloc(&mut self, layout: Layout) -> AllocResult<*mut u8> {
+        unimplemented!()
+    }
+
+    unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
+        unimplemented!()
+    }
+
+}
 
 // ===== impl FreeBlock =====
 
