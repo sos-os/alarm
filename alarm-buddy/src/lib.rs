@@ -150,14 +150,15 @@ where
     ///
     /// 1. Let _o_ be the desired order for the allocation.
     /// 2. Find a free block with order _o_. If found, return that block.
-    /// 3. Otherwise, find a free block with order _x_ > o, minimizing x.
-    ///   - If found:
-    ///     - Split the block in two, creating two free blocks with order
-    ///       _x_-1. These two blocks are called order-(_x_-1) buddies, because
-    ///       they are adjacent blocks with order _x_-1, and the address of one
-    ///       is easily calculated from the address of the other.
-    //      - Repeat step 2.
-    ///   - If there’s no larger free block, the allocation fails: return OOM.
+    /// 3. Otherwise, find a free block with order _x_ > _o_, minimizing _x_.
+    ///    - If found:
+    ///      - Split the block in two, creating two free blocks with order
+    ///        _x_-1. These two blocks are called order-(_x_-1) buddies, because
+    ///        they are adjacent blocks with order _x_-1, and the address of one
+    ///        is easily calculated from the address of the other.
+    ///      - Repeat step 2.
+    ///    - If there’s no larger free block:
+    ///        - The allocation fails: return OOM.
     pub fn allocate_order(&mut self, order: usize) -> AllocResult<*mut u8> {
         unimplemented!()
     }
