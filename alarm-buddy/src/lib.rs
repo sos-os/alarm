@@ -8,6 +8,7 @@
 //
 //! ALARM Buddy-Block Allocator
 #![feature(alloc, allocator_api)]
+#![no_std]
 extern crate alloc;
 extern crate alarm_base;
 extern crate intruder_alarm;
@@ -23,6 +24,9 @@ use alloc::allocator::{AllocErr, Layout};
 pub type FreeList = List<FreeBlock, FreeBlock, UnsafeRef<FreeBlock>>;
 
 mod log2;
+
+// #[cfg(test)]
+// mod tests;
 
 use self::log2::Log2;
 
@@ -123,14 +127,19 @@ where
         Ok(size.log2() - self.min_block_size_log2)
     }
 
-    fn refill(&mut self) -> Result<(), AllocErr> {
+    unsafe fn refill(&mut self) -> Result<(), AllocErr> {
         // Calculate the order of the free list to push a new frame to.
         // TODO: can we assume the max size is always equal to the frame size?
         //       if so, we can just always use the highest order...
-        let order =
-            self.block_order(Layout::from_size_align(F::FRAME_SIZE, 1))?;
-        let new_frame = self.frames.alloc()?;
-        self.push_block(*mut new_frame, order);
+        let layout = Layout::from_size_align(F::FRAME_SIZE, 1)
+            .ok_or(AllocErr::Unsupported {
+                details: "Unsupported layout for max FRAME_SIZE \
+                         (this shouldn't happen)!"
+            })?;
+        let order = self.block_order(&layout)?;
+        let mut new_frame = self.frames.alloc()?;
+        let frame_ptr: *mut u8 = &mut new_frame as *mut F::Frame as *mut _;
+        self.push_block(frame_ptr, order);
         Ok(())
 
     }
@@ -148,13 +157,5 @@ impl Linked for FreeBlock {
     #[inline]
     fn links_mut(&mut self) -> &mut Links<Self> {
         &mut self.links
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
     }
 }
