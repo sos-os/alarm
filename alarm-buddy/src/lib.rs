@@ -17,7 +17,7 @@ extern crate spin;
 use alarm_base::{AllocResult, FrameAllocator};
 
 use intruder_alarm::list::{List, Linked, Links};
-use intruder_alarm::UnsafeRef;
+use intruder_alarm::{UnsafeRef, OwningRef};
 
 use alloc::allocator::{Alloc, AllocErr, Layout};
 
@@ -143,6 +143,13 @@ where
         Ok(())
     }
 
+}
+
+unsafe impl<'a, F> Alloc for Heap<'a, F>
+where
+    F: FrameAllocator,
+{
+
     /// Allocate a block for the given order.
     ///
     /// This is the core of the buddy-block allocation algorithm. Here's
@@ -159,19 +166,37 @@ where
     ///      - Repeat step 2.
     ///    - If there’s no larger free block:
     ///        - The allocation fails: return OOM.
-    pub fn allocate_order(&mut self, order: usize) -> AllocResult<*mut u8> {
-        unimplemented!()
-    }
-
-}
-
-unsafe impl<'a, F> Alloc for Heap<'a, F>
-where
-    F: FrameAllocator,
-{
-
     unsafe fn alloc(&mut self, layout: Layout) -> AllocResult<*mut u8> {
-        unimplemented!()
+        // Try to calculate the minimum order necessary for the requested
+        // layout, or return `AllocErr::Unsupported` if the layout is
+        // invalid.
+        let min_order = self.block_order(&layout)?;
+        let mut current_order = min_order;
+
+        // Iterate over the free lists starting at the desired order to
+        // search for a free block.
+        for free_list in &mut self.free_lists[min_order..] {
+            // Try to pop a block off the free list, returning `None` if
+            // that free list is empty.
+            if let Some(block) = free_list.pop_front_node() {
+
+                // if the current order is greater than the minimum required
+                // order for the allocation, split the block down and push
+                // the remainder to the next free list.
+                if current_order > min_order {
+                    unimplemented!()
+
+                }
+
+                return Ok(block.into_ptr() as *mut _);
+            }
+            // If the free list is empty, increment the order of the searched
+            // free list and contine to the next list.
+            current_order += 1;
+        }
+
+        // TODO: refill and try again
+        Err(AllocErr::Exhausted { request: layout })
     }
 
     unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
