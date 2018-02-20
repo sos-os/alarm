@@ -8,3 +8,5 @@ alarm_base = { path = "../alarm-base" }
 intruder_alarm = { path = "../intruder-alarm" }
 spin = "0.4.6"
 
+[dependencies.hal9000]
+git = "https://github.com/sos-os/hal9000.git"

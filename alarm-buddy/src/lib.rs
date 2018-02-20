@@ -11,15 +11,18 @@
 #![no_std]
 extern crate alloc;
 extern crate alarm_base;
+extern crate hal9000;
 extern crate intruder_alarm;
 extern crate spin;
 
-use alarm_base::{AllocResult, FrameAllocator};
+use core::default::Default;
 
+use alarm_base::{AllocResult, FrameAllocator};
+use alloc::allocator::{Alloc, AllocErr, Layout};
+use hal9000::mem::{Page, PhysicalAddress};
 use intruder_alarm::list::{List, Linked, Links};
 use intruder_alarm::{UnsafeRef, OwningRef};
 
-use alloc::allocator::{Alloc, AllocErr, Layout};
 
 pub type FreeList = List<FreeBlock, FreeBlock, UnsafeRef<FreeBlock>>;
 
@@ -31,8 +34,15 @@ mod log2;
 use self::log2::Log2;
 
 /// A free block header.
+#[derive(Debug, Default)]
 pub struct FreeBlock {
-    links: Links<FreeBlock>
+
+    /// The size of the block (in bytes), including the free block header.
+    pub size: usize,
+
+    /// Pointers to the previous and next blocks in the free list.
+    links: Links<FreeBlock>,
+
 }
 
 /// A buddy-block allocator.
@@ -58,17 +68,6 @@ pub struct Heap<'a, F: 'a> {
 
     /// The underlying frame provider.
     frames: &'a mut F,
-
-}
-
-impl<'a, F> Heap<'a, F> {
-
-    /// Push a block of the given order.
-    //
-    // TODO: should this take a `Layout` instead?
-    unsafe fn push_block(&mut self, ptr: *mut u8, order: usize) {
-        unimplemented!()
-    }
 
 }
 
@@ -123,23 +122,69 @@ where
 
     /// Compute the order of the free list for a given `Layout`.
     pub fn block_order(&self, layout: &Layout) -> Result<usize, AllocErr> {
-        let size = self.block_size(layout)?;
-        Ok(size.log2() - self.min_block_size_log2)
+        self.block_size(layout).map(|size| self.order_from_size(size))
     }
 
-    unsafe fn refill(&mut self) -> Result<(), AllocErr> {
-        // Calculate the order of the free list to push a new frame to.
-        // TODO: can we assume the max size is always equal to the frame size?
-        //       if so, we can just always use the highest order...
-        let layout = Layout::from_size_align(F::FRAME_SIZE, 1)
-            .ok_or(AllocErr::Unsupported {
-                details: "Unsupported layout for max FRAME_SIZE \
-                         (this shouldn't happen)!"
-            })?;
-        let order = self.block_order(&layout)?;
-        let mut new_frame = self.frames.alloc()?;
-        let frame_ptr: *mut u8 = &mut new_frame as *mut F::Frame as *mut _;
-        self.push_block(frame_ptr, order);
+    #[inline]
+    fn order_from_size(&self, size: usize) -> usize {
+        size.log2() - self.min_block_size_log2
+    }
+
+    /// Push a `FreeBlock` onto the corresponding free list.
+    ///
+    /// The order of the free list to push to is calculated based on
+    /// the `FreeBlock`'s `size` field.
+    ///
+    /// # Arguments
+    /// - `block`: a `*mut` pointer to the block to push.
+    ///
+    /// # Safety
+    /// This function is unsafe due to:
+    /// - dereference of raw `*mut` pointer
+    /// - if the `size` field of the pushed block header is _less_ than
+    ///   the actual size of the block, then the remaining memory will
+    ///   be leaked.
+    /// - if the `size` field of the pushed block is _greater_ than the
+    ///   actual size of the block, then that block may be allocated for
+    ///   requests which exceed the block's size. This may result in
+    ///   writes to already allocated memory.
+    ///
+    pub unsafe fn push_block(&mut self, block: *mut FreeBlock) {
+        let order = self.order_from_size((*block).size);
+        let block_ref = UnsafeRef::from_mut_ptr(block);
+        self.free_lists[order].push_front_node(block_ref);
+    }
+
+}
+
+impl<'a, F> Heap<'a, F>
+where
+    F: FrameAllocator,
+    <<F as FrameAllocator>::Frame as Page>::Address:  PhysicalAddress,
+{
+
+    /// Request a new page from the frame allocator, and push it to
+    /// the heap's free list corresponding to the allocated frame size.
+    ///
+    /// # Returns
+    /// - `Ok(())` if the allocator was successfully refilled.
+    /// - `Err(AllocErr)` if an error occurred allocating a new block from
+    ///   the underlying frame allocator.
+    ///
+    /// # Safety
+    /// This function is unsafe due to use of unsafe APIs. It could
+    /// potentially become safe if it is refactored o better enforce
+    /// invariants across unsafe API calls.
+    ///
+    pub unsafe fn refill(&mut self) -> Result<(), AllocErr> {
+        // Allocate a new frame from `self.frames` and return
+        // `Err` if the allocation failed.
+        let new_frame = self.frames.alloc()?;
+
+        // Write the free block header into the new frame, and
+        // push it to the appropriate free list.
+        let new_block = FreeBlock::from_frame(new_frame);
+        self.push_block(new_block);
         Ok(())
     }
 
@@ -217,4 +262,29 @@ impl Linked for FreeBlock {
     fn links_mut(&mut self) -> &mut Links<Self> {
         &mut self.links
     }
+}
+
+
+impl FreeBlock {
+
+    /// Construct a new unlinked free block header in the given frame and
+    /// return it.
+    unsafe fn from_frame<F, A>(frame: F) -> *mut Self
+    where
+        F: Page<Address = A>,
+        A: PhysicalAddress,
+    {
+        // Get a mutable reference to the frame's start address. We will
+        // use this pointer to write the free block header, and then return it.
+        let ptr: *mut FreeBlock = frame.base_address().as_mut_ptr();
+
+        // Write the free block header into the frame.
+        *ptr = FreeBlock {
+            size: F::SIZE,
+            ..Default::default()
+        };
+
+        ptr
+    }
+
 }
