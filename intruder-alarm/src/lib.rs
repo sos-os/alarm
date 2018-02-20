@@ -182,6 +182,21 @@ impl<T: ?Sized> UnsafeRef<T> {
         UnsafeRef::from_box(Box::new(t))
     }
 }
+
+
+impl<T: ?Sized> UnsafeRef<T> {
+
+    /// Convert a raw `*mut T` pointer into an `UnsafeRef`.
+    ///
+    /// # Panics
+    /// - if the provided pointer is null.
+    #[inline]
+    pub unsafe fn from_mut_ptr(ptr: *mut T) -> Self {
+        NonNull::new(ptr)
+            .map(UnsafeRef)
+            .expect("attempted to create OwningRef from null *mut pointer!")
+    }
+}
 impl<T: ?Sized> Clone for UnsafeRef<T> {
     #[inline]
     fn clone(&self) -> Self {
