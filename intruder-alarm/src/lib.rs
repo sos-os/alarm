@@ -196,6 +196,15 @@ impl<T: ?Sized> UnsafeRef<T> {
             .map(UnsafeRef)
             .expect("attempted to create OwningRef from null *mut pointer!")
     }
+
+    /// Convert an `UnsafeRef` into a raw `*mut T`.
+    // TODO: can the UnsafeRef API be made more ergonomic w.r.t. raw pointer
+    //       conversions?
+    #[inline]
+    pub unsafe fn as_mut_ptr(&mut self) -> *mut T {
+        self.0.as_ptr()
+    }
+
 }
 impl<T: ?Sized> Clone for UnsafeRef<T> {
     #[inline]
