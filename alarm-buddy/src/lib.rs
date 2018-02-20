@@ -193,6 +193,7 @@ where
 unsafe impl<'a, F> Alloc for Heap<'a, F>
 where
     F: FrameAllocator,
+    <<F as FrameAllocator>::Frame as Page>::Address:  PhysicalAddress,
 {
 
     /// Allocate a block for the given order.
@@ -230,7 +231,6 @@ where
                 // the remainder to the next free list.
                 if current_order > min_order {
                     unimplemented!()
-
                 }
 
                 return Ok(block.into_ptr() as *mut _);
@@ -240,8 +240,13 @@ where
             current_order += 1;
         }
 
-        // TODO: refill and try again
-        Err(AllocErr::Exhausted { request: layout })
+        // We were not able to allocate a block. Refill the heap and try again.
+        // TODO: this could be optimized by making it iterative rather than
+        //       recursive...
+        // TODO: upper bound on number of times the allocator can be refilled?
+        let err = AllocErr::Exhausted { request: layout.clone() };
+        self.refill()?;
+        self.alloc(layout).map_err(|_| err)
     }
 
     unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
