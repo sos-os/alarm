@@ -15,13 +15,15 @@ extern crate hal9000;
 extern crate intruder_alarm;
 extern crate spin;
 
+use core::cmp::min;
 use core::default::Default;
+use core::ops;
 
 use alarm_base::{AllocResult, FrameAllocator};
 use alloc::allocator::{Alloc, AllocErr, Layout};
 use hal9000::mem::{Page, PhysicalAddress};
 use intruder_alarm::list::{List, Linked, Links};
-use intruder_alarm::{UnsafeRef, OwningRef};
+use intruder_alarm::UnsafeRef;
 
 
 pub type FreeList = List<FreeBlock, FreeBlock, UnsafeRef<FreeBlock>>;
@@ -56,8 +58,6 @@ pub struct Heap<'a, F: 'a> {
     /// We cache this to avoid re-calculating.
     min_block_size_log2: usize,
 
-    /// The order of
-
     /// The number of blocks in the heap.
     ///
     /// This must always be a power of 2.
@@ -65,6 +65,9 @@ pub struct Heap<'a, F: 'a> {
 
     /// The allocator's array of free list heads.
     free_lists: &'a mut [FreeList],
+
+    /// A pointer to the base of the heap.
+    base_ptr: *mut u8,
 
     /// The underlying frame provider.
     frames: &'a mut F,
@@ -148,11 +151,32 @@ where
     ///   actual size of the block, then that block may be allocated for
     ///   requests which exceed the block's size. This may result in
     ///   writes to already allocated memory.
-    ///
+    #[inline]
     pub unsafe fn push_block(&mut self, block: *mut FreeBlock) {
         let order = self.order_from_size((*block).size);
+        self.push_block_order(block, order);
+    }
+
+    #[inline]
+    unsafe fn push_block_order(&mut self, block: *mut FreeBlock, order: usize) {
         let block_ref = UnsafeRef::from_mut_ptr(block);
         self.free_lists[order].push_front_node(block_ref);
+    }
+
+    /// Returns the `buddy` for a given block, if it exists.
+    pub unsafe fn get_buddy(&self, block: *mut FreeBlock, order: usize)
+        -> Option<*mut FreeBlock> {
+        let size = 1 << (self.min_block_size_log2 as usize + order);
+
+        // If the block is the size of the entire heap, it obviously
+        // can't have a buddy.
+        if size == self.heap_size {
+            return None;
+        }
+
+        let relative_offset = (block as usize) - (self.base_ptr as usize);
+        let buddy_offset = (relative_offset ^ size) as isize;
+        Some(self.base_ptr.offset(buddy_offset) as *mut _)
     }
 
 }
@@ -185,6 +209,11 @@ where
         // push it to the appropriate free list.
         let new_block = FreeBlock::from_frame(new_frame);
         self.push_block(new_block);
+
+        // Refilling the heap with a new block increases the overall
+        // size of the heap.
+        self.heap_size += F::FRAME_SIZE;
+
         Ok(())
     }
 
@@ -217,27 +246,34 @@ where
         // layout, or return `AllocErr::Unsupported` if the layout is
         // invalid.
         let min_order = self.block_order(&layout)?;
-        let mut current_order = min_order;
 
         // Iterate over the free lists starting at the desired order to
         // search for a free block.
-        for free_list in &mut self.free_lists[min_order..] {
+        for current_order in min_order..self.free_lists.len() {
             // Try to pop a block off the free list, returning `None` if
-            // that free list is empty.
-            if let Some(block) = free_list.pop_front_node() {
+            // that free list is empty. If the free list is empty, continue to
+            // the next free list.
+            if let Some(mut block) = self
+                .free_lists[current_order]
+                .pop_front_node()
+            {
+                let block = block.as_mut_ptr();
 
-                // if the current order is greater than the minimum required
-                // order for the allocation, split the block down and push
-                // the remainder to the next free list.
-                if current_order > min_order {
-                    unimplemented!()
+                // If the current order is greater than the minimum required
+                // order for the allocation, split the block in half until it
+                // matches the requested order.
+                for split_order in current_order..min_order {
+                    // Split `block` in half, returning a pointer to the free
+                    // block header at the beginning of the split off half.
+                    // `block` is unchanged and still points to the header
+                    // at the beginning of the block.
+                    let split = FreeBlock::split(block);
+                    // Push `split` onto the free list for `split_order`.
+                    self.push_block_order(split, split_order);
                 }
 
-                return Ok(block.into_ptr() as *mut _);
+                return Ok(block as *mut _);
             }
-            // If the free list is empty, increment the order of the searched
-            // free list and contine to the next list.
-            current_order += 1;
         }
 
         // We were not able to allocate a block. Refill the heap and try again.
@@ -250,7 +286,22 @@ where
     }
 
     unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
-        unimplemented!()
+
+        let mut order = self.block_order(&layout)
+            .expect("can't deallocate an invalid layout");
+
+        let mut block = FreeBlock::from_ptr_size(ptr as *mut _, layout.size());
+        // Iterate over the free lists starting at the desired order to
+        // search for a free block.
+        while let Some(buddy) = self.get_buddy(block, order) {
+            if self.free_lists[order].cursor_mut().find_and_remove(|checking| checking as *mut _ == buddy) {
+                block = FreeBlock::merge(block, buddy);
+            } else {
+                break;
+            }
+        }
+
+        self.push_block_order(block, order);
     }
 
 }
@@ -274,6 +325,7 @@ impl FreeBlock {
 
     /// Construct a new unlinked free block header in the given frame and
     /// return it.
+    #[inline]
     unsafe fn from_frame<F, A>(frame: F) -> *mut Self
     where
         F: Page<Address = A>,
@@ -282,14 +334,63 @@ impl FreeBlock {
         // Get a mutable reference to the frame's start address. We will
         // use this pointer to write the free block header, and then return it.
         let ptr: *mut FreeBlock = frame.base_address().as_mut_ptr();
+        Self::from_ptr_size(ptr, F::SIZE)
+    }
+
+    /// Returns a new, unlinked `FreeBlock` header at the given pointer
+    /// with the provided size.
+    ///
+    /// # Safety
+    /// This function is unsafe because:
+    /// - use of raw `*mut` pointers
+    /// - `size` MUST match the size of the free block
+    #[inline]
+    unsafe fn from_ptr_size(ptr: *mut FreeBlock, size: usize) -> *mut Self {
+        let ptr: *mut FreeBlock = ptr as *mut _;
 
         // Write the free block header into the frame.
         *ptr = FreeBlock {
-            size: F::SIZE,
+            size,
             ..Default::default()
         };
 
         ptr
+    }
+
+    /// Split `block` in half, returning a new pointer to the half split off.
+    ///
+    /// `block` still points to the beginning of the free block, while the
+    /// returned pointer points to a new free block header in the half that was
+    /// split.
+    unsafe fn split(block: *mut FreeBlock) -> *mut Self {
+        //   H_______________
+        //   ^
+        // `block` points to the header of the block.
+        (*block).size >>= 1;
+        let size = (*block).size;
+        let split_ptr = block.offset(size as isize);
+        //   H_______________
+        //   ^       ^
+        //   |  `split_ptr` now points to an address halfway into the free block
+        // `block` still points to the header of the block.
+        FreeBlock::from_ptr_size(split_ptr, size)
+        //   H_______H_______
+        //   ^       ^
+        // `from_ptr_size` inserts a new free block header in the address
+        // pointed to by `split_ptr`
+    }
+
+    #[inline]
+    unsafe fn merge(a: *mut FreeBlock, b: *mut FreeBlock) -> *mut FreeBlock {
+        // select the block with the lower address.
+        let block = min(a, b);
+
+        // sum the sizes of the merged blocks and set the size of the new
+        // block equal to the sum.
+        (*block).size = (*a).size + (*b).size;
+
+        // return the merged block pointer
+        block
     }
 
 }
