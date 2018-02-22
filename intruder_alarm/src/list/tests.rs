@@ -113,9 +113,10 @@ mod boxed {
 
                 // if the list is not empty, try to cursor over it.
                 for x in &xs {
-                    if cursor.next_item().unwrap() != x {
+                    if cursor.get().unwrap() != x {
                         return TestResult::failed();
                     }
+                    cursor.move_forward();
                 }
 
                 TestResult::passed()
