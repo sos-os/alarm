@@ -7,8 +7,7 @@
 //  directory of this repository for more information.
 //
 //! Cursors allowing bi-directional traversal of data structures.
-//!
-use core::iter::{self, DoubleEndedIterator, Iterator};
+use core::iter;
 
 //-----------------------------------------------------------------------------
 // Traits
@@ -41,19 +40,19 @@ pub trait Cursor {
     }
 
     /// Return a reference to the item currently under the cursor.
-    fn get(&self) -> Option<Self::Item>;
+    fn get(&self) -> Option<&Self::Item>;
 
     /// Return a reference to the next element from the cursor's position.
-    fn peek_next(&self) -> Option<Self::Item>;
+    fn peek_next(&self) -> Option<&Self::Item>;
 
     /// Return a reference to the previous element from the cursor's
     /// position.
-    fn peek_back(&self) -> Option<Self::Item>;
+    fn peek_back(&self) -> Option<&Self::Item>;
 
     /// Advance the cursor one element and return a reference to that
     /// element.
     #[inline]
-    fn next_item(&mut self) -> Option<Self::Item> {
+    fn next_item(&mut self) -> Option<&Self::Item> {
         self.move_forward();
         self.get()
     }
@@ -61,15 +60,40 @@ pub trait Cursor {
     /// Move the cursor back one element and return a reference to that
     /// element.
     #[inline]
-    fn prev_item(&mut self) -> Option<Self::Item> {
+    fn prev_item(&mut self) -> Option<&Self::Item> {
         self.move_back();
         self.get()
     }
 }
 
 /// A cursor that can mutate the parent data structure.
-pub trait CursorMut<'a, T: 'a>: Cursor<Item = &'a mut T> {
+pub trait CursorMut<T>: Cursor<Item = T> {
     // TODO: some kind of `map`-like mutate in place function?
+    /// Return a reference to the item currently under the cursor.
+    fn get_mut(&mut self) -> Option<&mut T>;
+
+    /// Return a reference to the next element from the cursor's position.
+    fn peek_next_mut(&mut self) -> Option<&mut T>;
+
+    /// Return a reference to the previous element from the cursor's
+    /// position.
+    fn peek_back_mut(&mut self) -> Option<&mut T>;
+
+    /// Advance the cursor one element and return a reference to that
+    /// element.
+    #[inline]
+    fn next_item_mut(&mut self) -> Option<&mut T> {
+        self.move_forward();
+        self.get_mut()
+    }
+
+    /// Move the cursor back one element and return a reference to that
+    /// element.
+    #[inline]
+    fn prev_item_mut(&mut self) -> Option<&mut T> {
+        self.move_back();
+        self.get_mut()
+    }
 
     /// Remove the element currently under the cursor.
     fn remove(&mut self) -> Option<T>;
@@ -118,40 +142,5 @@ pub trait IntoCursor {
     type IntoCursor: Cursor<Item = Self::Item>;
 
     /// Create a cursor from a value.
-    fn into_iter(self) -> Self::IntoCursor;
+    fn into_cursor(self) -> Self::IntoCursor;
 }
-
-// ===== impl Cursor =====
-
-impl<I> Iterator for Cursor<Item = I> {
-    type Item = I;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        let item = self.get();
-        self.move_forward();
-        item
-    }
-}
-
-impl<I> DoubleEndedIterator for Cursor<Item = I> {
-    #[inline]
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.prev_item()
-    }
-}
-
-// ===== impl IntoCursor =====
-// TODO: trait object woes
-// impl<I, C> IntoIterator for IntoCursor<Item = I, IntoCursor = C>
-// where
-//     C: Iterator<Item = I>,
-// {
-//     type Item = I;
-//     type IntoIter = C;
-//
-//     fn into_iter(self) -> Self::IntoIter {
-//         self.into_cursor()
-//     }
-//
-// }
