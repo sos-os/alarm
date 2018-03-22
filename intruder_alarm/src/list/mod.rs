@@ -7,9 +7,10 @@
 //! use intrusive lists in code that runs without the kernel memory allocator,
 //! like the allocator implementation itself, since each list element manages
 //! its own memory.
-use ::{Link, OwningRef, UnsafeRef, cursor};
+use ::{Link, OwningRef, UnsafeRef};
+use ::cursor::{self, Cursor as CursorTrait };
 
-use core::iter::{Extend, FromIterator};
+use core::iter::{self, DoubleEndedIterator, Extend, FromIterator, Iterator};
 use core::marker::PhantomData;
 use core::mem;
 use core::ops::DerefMut;
@@ -150,7 +151,14 @@ pub struct Links<T> {
 #[derive(Debug)]
 pub struct Cursor<'a, T: 'a, N: 'a> {
     current: Option<&'a N>,
-    _elem_ty: PhantomData<T>,
+    _marker: PhantomData<&'a T>,
+}
+
+/// A mutable cursor over the elements of a `List`.
+#[derive(Debug)]
+pub struct CursorMut<'a, T: 'a, N: 'a> {
+    current: Link<N>,
+    _marker: PhantomData<&'a T>,
 }
 
 //-----------------------------------------------------------------------------
@@ -338,8 +346,16 @@ where
     pub fn cursor<'a>(&'a self) -> Cursor<'a, T, Node> {
         Cursor {
             current: self.head.as_ref(),
-            _elem_ty: PhantomData,
+            _marker: PhantomData,
 
+        }
+    }
+
+    /// Return a mutable `Cursor` over the items of this `List`.
+    pub fn cursor_mut<'a>(&'a mut self) -> CursorMut<'a, T, Node> {
+        CursorMut {
+            current: self.head,
+            _marker: PhantomData,
         }
     }
 }
@@ -540,7 +556,7 @@ where
     Node: Linked,
     Node: AsRef<T>,
 {
-    type Item = &'a T;
+    type Item = T;
 
     fn move_forward(&mut self) {
         self.current = self.current.and_then(Linked::next);
@@ -550,15 +566,131 @@ where
         self.current = self.current.and_then(Linked::prev);
     }
 
-    fn get(&self) -> Option<Self::Item> {
-        self.current.map(AsRef::as_ref)
+    fn get(&self) -> Option<&Self::Item> {
+        self.current.map(Node::as_ref)
     }
 
-    fn peek_next(&self) -> Option<Self::Item> {
-        self.current.and_then(Linked::next).map(AsRef::as_ref)
+    fn peek_next(&self) -> Option<&Self::Item> {
+        self.current.and_then(Linked::next).map(Node::as_ref)
     }
 
-    fn peek_back(&self) -> Option<Self::Item> {
-        self.current.and_then(Linked::prev).map(AsRef::as_ref)
+    fn peek_back(&self) -> Option<&Self::Item> {
+        self.current.and_then(Linked::prev).map(Node::as_ref)
+    }
+}
+
+impl<'a, T, Node> Iterator for Cursor<'a, T, Node>
+where
+    Node: Linked,
+    Node: AsRef<T>,
+{
+    type Item = &'a T;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let item = self.current.map(Node::as_ref);
+        self.move_forward();
+        item
+    }
+}
+
+impl<'a, T, Node> DoubleEndedIterator for Cursor<'a, T, Node>
+where
+    Node: Linked,
+    Node: AsRef<T>,
+{
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.move_back();
+        self.current.map(Node::as_ref)
+    }
+}
+
+// ===== impl CursorMut =====
+
+impl<'a, T, Node> cursor::Cursor for CursorMut<'a, T, Node>
+where
+    Node: Linked,
+    Node: AsRef<T>,
+{
+    type Item = T;
+
+    fn move_forward(&mut self) {
+        self.current = self.current.as_ref()
+            .and_then(Linked::next)
+            .map(|next|
+                Link::from_owning_ref(UnsafeRef::from(next))
+            )
+            .unwrap_or_else(Link::none);
+    }
+
+    fn move_back(&mut self) {
+        self.current = self.current.as_ref()
+            .and_then(Linked::prev)
+            .map(|prev|
+                Link::from_owning_ref(UnsafeRef::from(prev))
+            )
+            .unwrap_or_else(Link::none);
+    }
+
+    fn get(&self) -> Option<&Self::Item> {
+        self.current.as_ref().map(Node::as_ref)
+    }
+
+    fn peek_next(&self) -> Option<&Self::Item> {
+        self.current.as_ref().and_then(Linked::next).map(Node::as_ref)
+    }
+
+    fn peek_back(&self) -> Option<&Self::Item> {
+        self.current.as_ref().and_then(Linked::prev).map(Node::as_ref)
+    }
+}
+
+/// A cursor that can mutate the parent data structure.
+impl<'a, T, Node> cursor::CursorMut<T> for CursorMut<'a, T, Node>
+where
+    Node: Linked,
+    Node: AsRef<T> + AsMut<T>,
+{
+
+    /// Return a reference to the item currently under the cursor.
+    fn get_mut(&mut self) -> Option<&mut T> {
+        self.current.as_mut().map(Node::as_mut)
+    }
+
+    /// Return a reference to the next element from the cursor's position.
+    fn peek_next_mut(&mut self) -> Option<&mut T> {
+        self.current.as_mut().and_then(Linked::next_mut).map(Node::as_mut)
+    }
+
+    /// Return a reference to the previous element from the cursor's
+    /// position.
+    fn peek_back_mut(&mut self) -> Option<&mut T> {
+        self.current.as_mut().and_then(Linked::prev_mut).map(Node::as_mut)
+    }
+
+    /// Remove the element currently under the cursor.
+    fn remove(&mut self) -> Option<T> {
+        unimplemented!()
+    }
+
+    /// Find the first item matching predicate `P` and remove it
+    /// from the data structure.
+    fn remove_first<P>(&mut self, predicate: P) -> Option<T>
+    where
+        P: FnMut(&Self::Item) -> bool
+    {
+        unimplemented!()
+    }
+
+    /// Insert the given item before the cursor's position.
+    // TODO: ops::Place impl?
+    fn insert_before(&mut self, item: T) {
+        unimplemented!()
+    }
+
+    /// Insert the given item after the cursor's position.
+    fn insert_after(&mut self, item: T) {
+        unimplemented!()
     }
 }

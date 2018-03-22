@@ -278,7 +278,7 @@ impl<T: ?Sized> Link<T> {
     /// # Unsafe due to
     ///   - Returning a reference with an arbitrary lifetime
     ///   - Dereferencing a raw pointer
-    fn as_ref(&self) -> Option<&T> {
+    fn as_ref<'a>(&'a self) -> Option<&'a T> {
         self.0.as_ref().map(|shared| unsafe { shared.as_ref() })
     }
 
