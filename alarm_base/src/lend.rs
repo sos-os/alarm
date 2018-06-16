@@ -15,7 +15,6 @@ use core::{mem, ops, ptr};
 
 /// An allocator that can provide borrowed handles.
 pub trait Lend: Alloc + Sized {
-
     /// Borrow an allocation for a `T` from this lender.
     fn borrow<T>(self) -> Result<Borrowed<T, Self>, AllocErr>;
 }
@@ -32,13 +31,13 @@ pub trait Lend: Alloc + Sized {
 /// - `A`: the type of the allocator from which `T` was received.
 pub struct Borrowed<T, A>
 where
-    A: Alloc
+    A: Alloc,
 {
     /// The allocated value this `Borrowed` handle owns.
     value: ptr::NonNull<T>,
 
     /// A reference to the allocator that provided us with T.
-    allocator: A
+    allocator: A,
 }
 
 // ===== impl Lend =====
@@ -47,15 +46,12 @@ impl<A> Lend for A
 where
     A: Alloc,
 {
-
     /// Borrow an allocation for a `T` from this lender.
     fn borrow<T>(mut self) -> Result<Borrowed<T, Self>, AllocErr> {
-        self
-            .alloc_one::<T>()
-            .map(|value| Borrowed {
-                value,
-                allocator: self,
-            })
+        self.alloc_one::<T>().map(|value| Borrowed {
+            value,
+            allocator: self,
+        })
     }
 }
 
@@ -63,7 +59,7 @@ where
 
 impl<T, A> ops::Deref for Borrowed<T, A>
 where
-    A: Alloc
+    A: Alloc,
 {
     type Target = T;
 
@@ -75,7 +71,7 @@ where
 
 impl<T, A> ops::DerefMut for Borrowed<T, A>
 where
-    A: Alloc
+    A: Alloc,
 {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
@@ -85,7 +81,7 @@ where
 
 impl<T, A> Drop for Borrowed<T, A>
 where
-    A: Alloc
+    A: Alloc,
 {
     fn drop(&mut self) {
         let address = self.value.cast::<u8>();

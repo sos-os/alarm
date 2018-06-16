@@ -29,8 +29,10 @@
 // the "std" feature.
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 #![cfg_attr(feature = "alloc", feature(alloc))]
-#![cfg_attr(any(feature = "alloc", feature = "std", test),
-            feature(box_into_raw_non_null))]
+#![cfg_attr(
+    any(feature = "alloc", feature = "std", test),
+    feature(box_into_raw_non_null)
+)]
 #![feature(shared)]
 #![feature(const_fn)]
 #![deny(missing_docs)]
@@ -45,11 +47,11 @@ extern crate core;
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-use core::{fmt, mem};
 use core::borrow::Borrow;
 use core::default::Default;
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
+use core::{fmt, mem};
 
 pub mod cursor;
 pub use self::cursor::{Cursor, CursorMut};
@@ -136,9 +138,13 @@ impl<T: ?Sized> UnsafeRef<T> {
     /// `UnsafeRef` should only be used when there is no allocator capable
     /// of allocating `Box`es.
     #[inline]
-    #[cfg_attr(not(test),
-               deprecated(note = "Use of `UnsafeRef` is likely to be unnecessary \
-                                  when `Box` is available."))]
+    #[cfg_attr(
+        not(test),
+        deprecated(
+            note = "Use of `UnsafeRef` is likely to be unnecessary \
+                    when `Box` is available."
+        )
+    )]
     pub fn from_box(b: Box<T>) -> Self {
         unsafe { UnsafeRef(Box::into_raw_non_null(b)) }
     }
@@ -161,9 +167,13 @@ impl<T: ?Sized> UnsafeRef<T> {
     /// `UnsafeRef` should only be used when there is no allocator capable
     /// of allocating `Box`es.
     #[inline]
-    #[cfg_attr(not(test),
-               deprecated(note = "Use of `UnsafeRef` is likely to be unnecessary \
-                                  when `Box` is available."))]
+    #[cfg_attr(
+        not(test),
+        deprecated(
+            note = "Use of `UnsafeRef` is likely to be unnecessary \
+                    when `Box` is available."
+        )
+    )]
     pub fn boxed(t: T) -> Self
     where
         T: Sized,
@@ -336,11 +346,7 @@ impl<T> Default for Link<T> {
     }
 }
 
-impl<T: ?Sized> Copy for Link<T>
-where
-    Option<NonNull<T>>: Copy,
-{
-}
+impl<T: ?Sized> Copy for Link<T> where Option<NonNull<T>>: Copy {}
 // impl<'a, T> From<&'a T> for Link<T> {
 //     #[inline]
 //     fn from(reference: &'a T) -> Self {

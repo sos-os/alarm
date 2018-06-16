@@ -6,8 +6,8 @@
 //  directory of this repository for more information.
 //
 
-use super::*;
 use super::Linked;
+use super::*;
 use quickcheck::TestResult;
 use std::default::Default;
 
@@ -443,8 +443,8 @@ mod unsafe_ref {
 
     mod push_node {
         use super::*;
-        use UnsafeRef;
         use std::boxed::Box;
+        use UnsafeRef;
 
         #[test]
         fn not_empty_after_first_push() {
