@@ -23,6 +23,7 @@ pub mod lend;
 
 pub use self::frame::Allocator as FrameAllocator;
 use alloc::allocator::{Alloc, AllocErr, Layout};
+use core::ptr;
 
 /// An allocator behind a mutex.
 #[derive(Debug)]
@@ -43,11 +44,14 @@ unsafe impl<'a, A> Alloc for &'a LockedAlloc<A>
 where
     A: Alloc,
 {
-    unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
+    unsafe fn alloc(
+        &mut self,
+        layout: Layout,
+    ) -> Result<ptr::NonNull<u8>, AllocErr> {
         self.lock().alloc(layout)
     }
 
-    unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
+    unsafe fn dealloc(&mut self, ptr: ptr::NonNull<u8>, layout: Layout) {
         self.lock().dealloc(ptr, layout)
     }
 }

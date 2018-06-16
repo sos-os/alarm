@@ -88,14 +88,14 @@ where
     A: Alloc
 {
     fn drop(&mut self) {
-        let address = self.value.as_ptr();
+        let address = self.value.cast::<u8>();
         let layout = unsafe { Layout::for_value(self.value.as_ref()) };
         // ensure we drop the object _before_ deallocating it, so that
         // the object's `Drop` gets run first.
         mem::drop(address);
         unsafe {
             // lock the allocator and deallocate the object.
-            self.allocator.dealloc(address as *mut _, layout)
+            self.allocator.dealloc(address, layout)
         }
     }
 }
