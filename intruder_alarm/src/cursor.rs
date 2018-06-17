@@ -7,7 +7,7 @@
 //  directory of this repository for more information.
 //
 //! Cursors allowing bi-directional traversal of data structures.
-use core::iter;
+use core::{iter, ops};
 use ::OwningRef;
 
 //-----------------------------------------------------------------------------
@@ -146,13 +146,15 @@ where
         items
     }
 
-    /// Insert the given item before the cursor's position.
+    /// Insert the given node before the cursor's position.
     // TODO: ops::Place impl?
-    fn insert_before(&mut self, item: T);
+    fn insert_node_before(&mut self, mut node: Self::Ref)
+    where Self::Ref: ops::DerefMut;
 
-    /// Insert the given item after the cursor's position.
+    /// Insert the given node after the cursor's position.
     // TODO: ops::Place impl?
-    fn insert_after(&mut self, item: T);
+    fn insert_node_after(&mut self, node: Self::Ref)
+    where Self::Ref: ops::DerefMut;
 
     /// Iterate over each item in the data structure and mutate it in place
     /// with function `f`.

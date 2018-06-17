@@ -210,6 +210,142 @@ macro_rules! gen_cursor_tests {
                     TestResult::passed()
                 }
 
+                fn cursor_mut_insert_before(xs: Vec<usize>, insert: usize, i: usize) -> TestResult {
+                    let mut list = $list::new();
+                    if i >= xs.len() || i == 0 {
+                        return TestResult::discard();
+                    }
+
+                    for x in xs.clone() {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+
+                    let starting_len = list.len();
+                    let mut xs = xs;
+                    xs.insert(i, insert);
+
+                    {
+                        // Only hang on to the cursor for this scope, so we can
+                        // release the mutable borrow on the list at the end.
+                        let mut cursor = list.cursor_mut();
+
+                        // Move the cursor to the correct position.
+                        cursor.seek_forward(i);
+
+                        cursor.insert_node_before($node_ctor(NumberedNode::new(insert)));
+                    }
+
+                    assert_eq!(list.len(), starting_len + 1);
+
+                    let list_contents = list.cursor().map(|&x| x).collect::<Vec<usize>>();
+                    assert_eq!(xs, list_contents, "post-insertion check");
+
+                    TestResult::passed()
+                }
+
+                fn cursor_mut_insert_before_n(
+                    xs: Vec<usize>,
+                    insertions: Vec<(usize, usize)>
+                ) -> TestResult {
+                    let mut list = $list::new();
+
+                    for x in xs.clone() {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+
+                    let starting_len = list.len();
+                    let mut xs = xs;
+                    for (insert, at) in &insertions {
+                        if *at >= xs.len() {
+                            return TestResult::discard();
+                        }
+
+                        xs.insert(*at, *insert);
+
+                        let mut cursor = list.cursor_mut();
+                        cursor.seek_forward(*at);
+                        cursor.insert_node_before($node_ctor(NumberedNode::new(*insert)));
+                    }
+
+                    assert_eq!(list.len(), starting_len + insertions.len());
+
+                    let list_contents = list.cursor().map(|&x| x).collect::<Vec<usize>>();
+                    assert_eq!(xs, list_contents, "post-insertion check");
+
+                    TestResult::passed()
+                }
+
+                fn cursor_mut_insert_after(xs: Vec<usize>, insert: usize, i: usize) -> TestResult {
+                    let mut list = $list::new();
+                    if i >= xs.len() || i == 0{
+                        return TestResult::discard();
+                    }
+
+                    for x in xs.clone() {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+
+                    let starting_len = list.len();
+                    let mut xs = xs;
+                    xs.insert(i, insert);
+
+                    {
+                        // Only hang on to the cursor for this scope, so we can
+                        // release the mutable borrow on the list at the end.
+                        let mut cursor = list.cursor_mut();
+
+                        // Move the cursor to the correct position.
+                        // for _ in 0..i - 1 {
+                        //     cursor.move_forward();
+                        // }
+                        cursor.seek_forward(i - 1);
+                        cursor.insert_node_after($node_ctor(NumberedNode::new(insert)));
+                    }
+
+                    assert_eq!(list.len(), starting_len + 1);
+
+                    let list_contents = list.cursor().map(|&x| x).collect::<Vec<usize>>();
+                    assert_eq!(xs, list_contents, "post-insertion check");
+
+                    TestResult::passed()
+                }
+
+                fn cursor_mut_insert_after_n(
+                    xs: Vec<usize>,
+                    insertions: Vec<(usize, usize)>
+                ) -> TestResult {
+                    if insertions.len() > 100 {
+                        return TestResult::discard();
+                    }
+
+                    let mut list = $list::new();
+
+                    for x in xs.clone() {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+
+                    let starting_len = list.len();
+                    let mut xs = xs;
+                    for (insert, at) in &insertions {
+                        if *at >= xs.len() || *at == 0 {
+                            return TestResult::discard();
+                        }
+
+                        xs.insert(*at, *insert);
+
+                        let mut cursor = list.cursor_mut();
+                        cursor.seek_forward(*at - 1);
+                        cursor.insert_node_after($node_ctor(NumberedNode::new(*insert)));
+                    }
+
+                    assert_eq!(list.len(), starting_len + insertions.len());
+
+                    let list_contents = list.cursor().map(|&x| x).collect::<Vec<usize>>();
+                    assert_eq!(xs, list_contents, "post-insertion check");
+
+                    TestResult::passed()
+                }
+
                 fn cursor_empty_after_n_iterations(xs: Vec<usize>) -> TestResult {
                     let mut list = $list::new();
                     for x in xs {
@@ -266,25 +402,25 @@ macro_rules! gen_cursor_tests {
                     TestResult::passed()
 
                 }
-            }
 
-            fn cursor_mut_map_in_place(xs: Vec<usize>, add: usize) -> TestResult {
-                let mut list = $list::new();
-                for x in xs.clone() {
-                    list.push_back_node($node_ctor(NumberedNode::new(x)));
+                fn cursor_mut_map_in_place(xs: Vec<usize>, add: usize) -> TestResult {
+                    let mut list = $list::new();
+                    for x in xs.clone() {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+
+                    let mut xs = xs;
+                    for x in &mut xs {
+                        *x += add;
+                    }
+
+                    list.cursor_mut().map_in_place(|x| { *x += add; });
+
+                    let list_contents = list.cursor().map(|&x| x).collect::<Vec<usize>>();
+                    assert_eq!(xs, list_contents, "post-mutation check");
+
+                    return TestResult::passed();
                 }
-
-                let mut xs = xs;
-                for x in &mut xs {
-                    *x += add;
-                }
-
-                list.cursor_mut().map_in_place(|x| { *x += add; });
-
-                let list_contents = list.cursor().map(|&x| x).collect::<Vec<usize>>();
-                assert_eq!(xs, list_contents, "post-mutation check");
-
-                return TestResult::passed();
             }
         }
     }

@@ -81,7 +81,7 @@ pub struct UnsafeRef<T: ?Sized>(NonNull<T>);
 
 /// A `Link` provides an [`Option`]-like interface to a [`NonNull`] pointer.
 ///
-///
+#[derive(Eq, PartialEq)]
 pub struct Link<T: ?Sized>(Option<NonNull<T>>);
 
 // ===== impl OwningRef =====
