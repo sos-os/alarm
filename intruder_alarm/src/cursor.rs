@@ -8,6 +8,7 @@
 //
 //! Cursors allowing bi-directional traversal of data structures.
 use core::iter;
+use ::OwningRef;
 
 //-----------------------------------------------------------------------------
 // Traits
@@ -67,7 +68,13 @@ pub trait Cursor {
 }
 
 /// A cursor that can mutate the parent data structure.
-pub trait CursorMut<T>: Cursor<Item = T> {
+pub trait CursorMut<T, N>: Cursor<Item = T>
+where
+    N: AsRef<T> + AsMut<T>,
+{
+    /// The type of [`OwningRef`] used by the parent data structure.
+    type Ref: OwningRef<N>;
+
     // TODO: some kind of `map`-like mutate in place function?
     /// Return a reference to the item currently under the cursor.
     fn get_mut(&mut self) -> Option<&mut T>;
@@ -79,7 +86,7 @@ pub trait CursorMut<T>: Cursor<Item = T> {
     /// position.
     fn peek_back_mut(&mut self) -> Option<&mut T>;
 
-    /// Advance the cursor one element and return a reference to that
+    /// Advance the cursor one element and return a mutable reference to that
     /// element.
     #[inline]
     fn next_item_mut(&mut self) -> Option<&mut T> {
@@ -87,32 +94,54 @@ pub trait CursorMut<T>: Cursor<Item = T> {
         self.get_mut()
     }
 
-    /// Move the cursor back one element and return a reference to that
-    /// element.
+    /// Move the cursor back one element and return a mutable reference to
+    /// that element.
     #[inline]
     fn prev_item_mut(&mut self) -> Option<&mut T> {
         self.move_back();
         self.get_mut()
     }
 
-    /// Remove the element currently under the cursor.
-    fn remove(&mut self) -> Option<T>;
+    /// Remove the node currently under the cursor.
+    fn remove_node(&mut self) -> Option<Self::Ref>;
 
-    /// Find the first item matching predicate `P` and remove it
-    /// from the data structure.
-    fn remove_first<P>(&mut self, predicate: P) -> Option<T>
-    where
-        P: FnMut(&Self::Item) -> bool;
-
-    /// Find all items matching predicate `P` and remove them
-    /// from the data structure.
-    fn remove_all<C, P>(&mut self, mut predicate: P) -> C
+    /// Find the first node matching predicate `P` and remove it.
+    fn remove_first_node<P>(&mut self, mut predicate: P) -> Option<Self::Ref>
     where
         P: FnMut(&Self::Item) -> bool,
-        C: iter::Extend<T> + iter::FromIterator<T>,
     {
-        let mut items = iter::empty::<T>().collect::<C>();
-        while let removed @ Some(_) = self.remove_first(&mut predicate) {
+        // XXX: This would be much more cleanly expressed with a `while let`,
+        //      but that doesn't quite work for Borrow Checker Reasons...
+        loop {
+            // First, test if the cursor is over an item, and if the item
+            // matches the predicate.
+            let matches = if let Some(ref item) = self.get() {
+                predicate(item)
+            } else {
+                // If we're not over an item, then we've scanned the entire
+                // structure and haven't found a match, so we `None`.
+                return None;
+            };
+
+            // If the item matches, remove and return it.
+            if matches {
+                return self.remove_node();
+            }
+
+            // Otherwise, continue searching.
+            self.move_forward();
+        }
+    }
+
+    /// Find all nodes matching predicate `P` and remove them
+    /// from the data structure.
+    fn remove_all_nodes<C, P>(&mut self, mut predicate: P) -> C
+    where
+        P: FnMut(&Self::Item) -> bool,
+        C: iter::Extend<Self::Ref> + iter::FromIterator<Self::Ref>,
+    {
+        let mut items = iter::empty::<Self::Ref>().collect::<C>();
+        while let removed @ Some(_) = self.remove_first_node(&mut predicate) {
             items.extend(removed);
         }
         items
