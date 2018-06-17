@@ -75,7 +75,6 @@ where
     /// The type of [`OwningRef`] used by the parent data structure.
     type Ref: OwningRef<N>;
 
-    // TODO: some kind of `map`-like mutate in place function?
     /// Return a reference to the item currently under the cursor.
     fn get_mut(&mut self) -> Option<&mut T>;
 
@@ -154,6 +153,26 @@ where
     /// Insert the given item after the cursor's position.
     // TODO: ops::Place impl?
     fn insert_after(&mut self, item: T);
+
+    /// Iterate over each item in the data structure and mutate it in place
+    /// with function `f`.
+    fn map_in_place<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&mut Self::Item),
+    {
+        loop {
+            if let Some(ref mut i) = self.get_mut() {
+                // If there is an item under the cursor, mutate it with `f`.
+                f(i);
+            } else {
+                // Otherwise, we've reached the end of the data structure.
+                return;
+            };
+
+            // Advance the cursor to the next element.
+            self.move_forward();
+        }
+    }
 }
 
 /// Conversion into a `Cursor``.
