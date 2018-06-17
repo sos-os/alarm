@@ -227,12 +227,9 @@ macro_rules! gen_cursor_tests {
                     {
                         // Only hang on to the cursor for this scope, so we can
                         // release the mutable borrow on the list at the end.
-                        let mut cursor = list.cursor_mut();
-
-                        // Move the cursor to the correct position.
-                        cursor.seek_forward(i);
-
-                        cursor.insert_node_before($node_ctor(NumberedNode::new(insert)));
+                        list.cursor_mut()
+                            .seek_forward(i)
+                            .insert_node_before($node_ctor(NumberedNode::new(insert)));
                     }
 
                     assert_eq!(list.len(), starting_len + 1);
@@ -262,9 +259,9 @@ macro_rules! gen_cursor_tests {
 
                         xs.insert(*at, *insert);
 
-                        let mut cursor = list.cursor_mut();
-                        cursor.seek_forward(*at);
-                        cursor.insert_node_before($node_ctor(NumberedNode::new(*insert)));
+                        list.cursor_mut()
+                            .seek_forward(*at)
+                            .insert_node_before($node_ctor(NumberedNode::new(*insert)));
                     }
 
                     assert_eq!(list.len(), starting_len + insertions.len());
@@ -289,18 +286,9 @@ macro_rules! gen_cursor_tests {
                     let mut xs = xs;
                     xs.insert(i, insert);
 
-                    {
-                        // Only hang on to the cursor for this scope, so we can
-                        // release the mutable borrow on the list at the end.
-                        let mut cursor = list.cursor_mut();
-
-                        // Move the cursor to the correct position.
-                        // for _ in 0..i - 1 {
-                        //     cursor.move_forward();
-                        // }
-                        cursor.seek_forward(i - 1);
-                        cursor.insert_node_after($node_ctor(NumberedNode::new(insert)));
-                    }
+                    list.cursor_mut()
+                        .seek_forward(i - 1)
+                        .insert_node_after($node_ctor(NumberedNode::new(insert)));
 
                     assert_eq!(list.len(), starting_len + 1);
 
@@ -333,9 +321,9 @@ macro_rules! gen_cursor_tests {
 
                         xs.insert(*at, *insert);
 
-                        let mut cursor = list.cursor_mut();
-                        cursor.seek_forward(*at - 1);
-                        cursor.insert_node_after($node_ctor(NumberedNode::new(*insert)));
+                        list.cursor_mut()
+                            .seek_forward(*at - 1)
+                            .insert_node_after($node_ctor(NumberedNode::new(*insert)));
                     }
 
                     assert_eq!(list.len(), starting_len + insertions.len());

@@ -558,12 +558,14 @@ where
 {
     type Item = T;
 
-    fn move_forward(&mut self) {
+    fn move_forward(&mut self) -> &mut Self {
         self.current = self.current.and_then(Linked::next);
+        self
     }
 
-    fn move_back(&mut self) {
+    fn move_back(&mut self) -> &mut Self {
         self.current = self.current.and_then(Linked::prev);
+        self
     }
 
     fn get(&self) -> Option<&Self::Item> {
@@ -615,22 +617,24 @@ where
 {
     type Item = T;
 
-    fn move_forward(&mut self) {
+    fn move_forward(&mut self)-> &mut Self {
         self.current = self.current.as_ref()
             .and_then(Linked::next)
             .map(|next|
                 Link::from_owning_ref(UnsafeRef::from(next))
             )
             .unwrap_or_else(Link::none);
+        self
     }
 
-    fn move_back(&mut self) {
+    fn move_back(&mut self) -> &mut Self {
         self.current = self.current.as_ref()
             .and_then(Linked::prev)
             .map(|prev|
                 Link::from_owning_ref(UnsafeRef::from(prev))
             )
             .unwrap_or_else(Link::none);
+        self
     }
 
     fn get(&self) -> Option<&Self::Item> {
@@ -709,7 +713,7 @@ where
     }
 
     /// Insert the given item before the cursor's position.
-    fn insert_node_before(&mut self, mut node: Self::Ref)
+    fn insert_node_before(&mut self, mut node: Self::Ref) -> &mut Self
     where
         Self::Ref: DerefMut,
     {
@@ -744,10 +748,11 @@ where
         }
         self.current = node;
         self.list.len += 1;
+        self
     }
 
     /// Insert the given item after the cursor's position.
-    fn insert_node_after(&mut self, mut node: Self::Ref)
+    fn insert_node_after(&mut self, mut node: Self::Ref) -> &mut Self
     where
         Self::Ref: DerefMut,
     {
@@ -779,5 +784,6 @@ where
         }
 
         self.list.len += 1;
+        self
     }
 }
