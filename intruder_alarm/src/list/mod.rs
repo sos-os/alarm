@@ -7,8 +7,8 @@
 //! use intrusive lists in code that runs without the kernel memory allocator,
 //! like the allocator implementation itself, since each list element manages
 //! its own memory.
-use ::{Link, OwningRef, UnsafeRef};
-use ::cursor::{self, Cursor as CursorTrait };
+use cursor::{self, Cursor as CursorTrait};
+use {Link, OwningRef, UnsafeRef};
 
 use core::iter::{self, DoubleEndedIterator, Extend, FromIterator, Iterator};
 use core::marker::PhantomData;
@@ -347,7 +347,6 @@ where
         Cursor {
             current: self.head.as_ref(),
             _marker: PhantomData,
-
         }
     }
 
@@ -617,22 +616,22 @@ where
 {
     type Item = T;
 
-    fn move_forward(&mut self)-> &mut Self {
-        self.current = self.current.as_ref()
+    fn move_forward(&mut self) -> &mut Self {
+        self.current = self
+            .current
+            .as_ref()
             .and_then(Linked::next)
-            .map(|next|
-                Link::from_owning_ref(UnsafeRef::from(next))
-            )
+            .map(|next| Link::from_owning_ref(UnsafeRef::from(next)))
             .unwrap_or_else(Link::none);
         self
     }
 
     fn move_back(&mut self) -> &mut Self {
-        self.current = self.current.as_ref()
+        self.current = self
+            .current
+            .as_ref()
             .and_then(Linked::prev)
-            .map(|prev|
-                Link::from_owning_ref(UnsafeRef::from(prev))
-            )
+            .map(|prev| Link::from_owning_ref(UnsafeRef::from(prev)))
             .unwrap_or_else(Link::none);
         self
     }
@@ -642,11 +641,17 @@ where
     }
 
     fn peek_next(&self) -> Option<&Self::Item> {
-        self.current.as_ref().and_then(Linked::next).map(Node::as_ref)
+        self.current
+            .as_ref()
+            .and_then(Linked::next)
+            .map(Node::as_ref)
     }
 
     fn peek_back(&self) -> Option<&Self::Item> {
-        self.current.as_ref().and_then(Linked::prev).map(Node::as_ref)
+        self.current
+            .as_ref()
+            .and_then(Linked::prev)
+            .map(Node::as_ref)
     }
 }
 
@@ -666,13 +671,19 @@ where
 
     /// Return a reference to the next element from the cursor's position.
     fn peek_next_mut(&mut self) -> Option<&mut T> {
-        self.current.as_mut().and_then(Linked::next_mut).map(Node::as_mut)
+        self.current
+            .as_mut()
+            .and_then(Linked::next_mut)
+            .map(Node::as_mut)
     }
 
     /// Return a reference to the previous element from the cursor's
     /// position.
     fn peek_back_mut(&mut self) -> Option<&mut T> {
-        self.current.as_mut().and_then(Linked::prev_mut).map(Node::as_mut)
+        self.current
+            .as_mut()
+            .and_then(Linked::prev_mut)
+            .map(Node::as_mut)
     }
 
     /// Remove the element currently under the cursor.
@@ -722,7 +733,9 @@ where
         {
             let links = node.links_mut();
             links.next = self.current;
-            links.prev = self.current.as_ref()
+            links.prev = self
+                .current
+                .as_ref()
                 .map(|current| current.links().prev)
                 .unwrap_or_else(Link::none);
         }
@@ -761,7 +774,9 @@ where
         {
             let links = node.links_mut();
             links.prev = self.current;
-            links.next = self.current.as_ref()
+            links.next = self
+                .current
+                .as_ref()
                 .map(|current| current.links().next)
                 .unwrap_or_else(Link::none);
         }

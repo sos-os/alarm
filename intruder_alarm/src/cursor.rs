@@ -8,7 +8,7 @@
 //
 //! Cursors allowing bi-directional traversal of data structures.
 use core::{iter, ops};
-use ::OwningRef;
+use OwningRef;
 
 //-----------------------------------------------------------------------------
 // Traits
@@ -35,7 +35,7 @@ pub trait Cursor {
 
     /// Move the cursor `n` elements back.
     #[inline]
-    fn seek_back(&mut self, n: usize)  -> &mut Self {
+    fn seek_back(&mut self, n: usize) -> &mut Self {
         for _ in 0..n {
             self.move_back();
         }
@@ -147,12 +147,14 @@ where
     /// Insert the given node before the cursor's position.
     // TODO: ops::Place impl?
     fn insert_node_before(&mut self, mut node: Self::Ref) -> &mut Self
-    where Self::Ref: ops::DerefMut;
+    where
+        Self::Ref: ops::DerefMut;
 
     /// Insert the given node after the cursor's position.
     // TODO: ops::Place impl?
     fn insert_node_after(&mut self, node: Self::Ref) -> &mut Self
-    where Self::Ref: ops::DerefMut;
+    where
+        Self::Ref: ops::DerefMut;
 
     /// Iterate over each item in the data structure and mutate it in place
     /// with function `f`.
@@ -167,7 +169,7 @@ where
                 false
             } else {
                 // Otherwise, we've reached the end of the data structure.
-               true
+                true
             };
 
             if done {
