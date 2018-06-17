@@ -267,6 +267,25 @@ macro_rules! gen_cursor_tests {
 
                 }
             }
+
+            fn cursor_mut_map_in_place(xs: Vec<usize>, add: usize) -> TestResult {
+                let mut list = $list::new();
+                for x in xs.clone() {
+                    list.push_back_node($node_ctor(NumberedNode::new(x)));
+                }
+
+                let mut xs = xs;
+                for x in &mut xs {
+                    *x += add;
+                }
+
+                list.cursor_mut().map_in_place(|x| { *x += add; });
+
+                let list_contents = list.cursor().map(|&x| x).collect::<Vec<usize>>();
+                assert_eq!(xs, list_contents, "post-mutation check");
+
+                return TestResult::passed();
+            }
         }
     }
 }
