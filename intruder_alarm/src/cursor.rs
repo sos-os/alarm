@@ -19,25 +19,27 @@ pub trait Cursor {
     type Item;
 
     /// Move the cursor one element forward.
-    fn move_forward(&mut self);
+    fn move_forward(&mut self) -> &mut Self;
 
     /// Move the cursor one element back.
-    fn move_back(&mut self);
+    fn move_back(&mut self) -> &mut Self;
 
     /// Move the cursor `n` elements forward.
     #[inline]
-    fn seek_forward(&mut self, n: usize) {
+    fn seek_forward(&mut self, n: usize) -> &mut Self {
         for _ in 0..n {
             self.move_forward();
         }
+        self
     }
 
     /// Move the cursor `n` elements back.
     #[inline]
-    fn seek_back(&mut self, n: usize) {
+    fn seek_back(&mut self, n: usize)  -> &mut Self {
         for _ in 0..n {
             self.move_back();
         }
+        self
     }
 
     /// Return a reference to the item currently under the cursor.
@@ -54,16 +56,14 @@ pub trait Cursor {
     /// element.
     #[inline]
     fn next_item(&mut self) -> Option<&Self::Item> {
-        self.move_forward();
-        self.get()
+        self.move_forward().get()
     }
 
     /// Move the cursor back one element and return a reference to that
     /// element.
     #[inline]
     fn prev_item(&mut self) -> Option<&Self::Item> {
-        self.move_back();
-        self.get()
+        self.move_back().get()
     }
 }
 
@@ -89,16 +89,14 @@ where
     /// element.
     #[inline]
     fn next_item_mut(&mut self) -> Option<&mut T> {
-        self.move_forward();
-        self.get_mut()
+        self.move_forward().get_mut()
     }
 
     /// Move the cursor back one element and return a mutable reference to
     /// that element.
     #[inline]
     fn prev_item_mut(&mut self) -> Option<&mut T> {
-        self.move_back();
-        self.get_mut()
+        self.move_back().get_mut()
     }
 
     /// Remove the node currently under the cursor.
@@ -148,28 +146,33 @@ where
 
     /// Insert the given node before the cursor's position.
     // TODO: ops::Place impl?
-    fn insert_node_before(&mut self, mut node: Self::Ref)
+    fn insert_node_before(&mut self, mut node: Self::Ref) -> &mut Self
     where Self::Ref: ops::DerefMut;
 
     /// Insert the given node after the cursor's position.
     // TODO: ops::Place impl?
-    fn insert_node_after(&mut self, node: Self::Ref)
+    fn insert_node_after(&mut self, node: Self::Ref) -> &mut Self
     where Self::Ref: ops::DerefMut;
 
     /// Iterate over each item in the data structure and mutate it in place
     /// with function `f`.
-    fn map_in_place<F>(&mut self, mut f: F)
+    fn map_in_place<F>(&mut self, mut f: F) -> &mut Self
     where
         F: FnMut(&mut Self::Item),
     {
         loop {
-            if let Some(ref mut i) = self.get_mut() {
+            let done = if let Some(ref mut i) = self.get_mut() {
                 // If there is an item under the cursor, mutate it with `f`.
                 f(i);
+                false
             } else {
                 // Otherwise, we've reached the end of the data structure.
-                return;
+               true
             };
+
+            if done {
+                return self;
+            }
 
             // Advance the cursor to the next element.
             self.move_forward();
