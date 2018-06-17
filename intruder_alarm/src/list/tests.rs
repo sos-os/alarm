@@ -67,63 +67,216 @@ impl Into<usize> for NumberedNode {
         self.number
     }
 }
+macro_rules! gen_cursor_tests {
+    ($list:tt, $node_ctor:path) => {
+        mod cursor {
+            use super::*;
+            use ::{Cursor, CursorMut};
+            use quickcheck::TestResult;
 
+            quickcheck! {
+                fn cursor_mut_remove_first_node(xs: Vec<usize>, target: usize) -> TestResult {
+                    let mut list = $list::new();
+                    for x in xs.clone() {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+
+                    for (l_i, x_i) in list.cursor().zip(xs.iter()) {
+                        assert_eq!(l_i, x_i, "pre-removal check");
+                    }
+
+                    let mut xs = xs;
+                    let starting_len = list.len();
+                    let removed_num = xs.iter()
+                        .position(|&i| i < target)
+                        .map(|rm_idx| xs.remove(rm_idx));
+
+                    {
+                        let mut cursor = list.cursor_mut();
+                        let removed_node = cursor.remove_first_node(|&i| i < target);
+                        assert_eq!(removed_node.map(|n| n.number), removed_num,
+                            "same number removed");
+                    }
+
+                    if removed_num.is_some() {
+                        assert_eq!(list.len(), starting_len - 1, "post-removal length");
+                    }
+
+                    let list_contents = list.cursor().map(|&x| x).collect::<Vec<usize>>();
+                    assert_eq!(xs, list_contents, "post-removal check");
+
+                    return TestResult::passed();
+                }
+
+                fn cursor_mut_remove_all_nodes(xs: Vec<usize>, target: usize) -> TestResult {
+                    let mut list = $list::new();
+                    for x in xs.clone() {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+
+                    for (l_i, x_i) in list.cursor().zip(xs.iter()) {
+                        assert_eq!(l_i, x_i, "pre-removal check");
+                    }
+
+                    let mut xs = xs;
+                    let starting_len = list.len();
+                    let mut removed_xs = vec![];
+                    xs.retain(|&x|
+                        if x > target {
+                            removed_xs.push(x);
+                            false
+                        } else { true }
+                    );
+
+                    let removed_nodes: Vec<_> = list.cursor_mut()
+                        .remove_all_nodes(|&x| x > target);
+
+                    let removed_nodes: Vec<usize> = removed_nodes.into_iter().
+                        map(|x| x.number).collect();
+
+                    assert_eq!(list.len(), starting_len - removed_nodes.len(),
+                        "post-removal length");
+
+                    let list_contents = list.cursor().map(|&x| x).collect::<Vec<usize>>();
+                    assert_eq!(xs, list_contents, "post-removal check");
+                    assert_eq!(removed_xs, removed_nodes, "same nodes removed");
+
+                    return TestResult::passed();
+                }
+
+                fn cursor_mut_remove_node_front(xs: Vec<usize>) -> TestResult {
+                    let mut list = $list::new();
+                    for x in xs.clone() {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+
+                    if list.is_empty() {
+                        return TestResult::passed();
+                    }
+
+                    {
+                        // Only hang on to the cursor for this scope, so we can
+                        // release the mutable borrow on the list at the end.
+                        let mut cursor = list.cursor_mut();
+                        for x in xs {
+                            let node = cursor.remove_node();
+                            assert_eq!(node.unwrap().number, x);
+                        }
+
+                        if cursor.next_item().is_some() {
+                            return TestResult::failed();
+                        }
+                    }
+
+                    assert!(list.is_empty());
+                    assert_eq!(list.len(), 0);
+
+                    TestResult::passed()
+                }
+
+                fn cursor_mut_remove_arbitrary_node(xs: Vec<usize>, i: usize) -> TestResult {
+                    let mut list = $list::new();
+                    if i >= xs.len() || xs.len() == 0 {
+                        return TestResult::discard();
+                    }
+
+                    for x in xs.clone() {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+
+                    let starting_len = list.len();
+                    let mut xs = xs;
+                    let removed_item = xs.remove(i);
+
+                    {
+                        // Only hang on to the cursor for this scope, so we can
+                        // release the mutable borrow on the list at the end.
+                        let mut cursor = list.cursor_mut();
+
+                        // Move the cursor to the correct position.
+                        for _ in 0..i {
+                            cursor.move_forward();
+                        }
+
+                        let node = cursor.remove_node();
+                        assert_eq!(node.unwrap().number, removed_item, "which item was removed?");
+                    }
+
+                    assert_eq!(list.len(), starting_len - 1);
+
+                    let list_contents = list.cursor().map(|&x| x).collect::<Vec<usize>>();
+                    assert_eq!(xs, list_contents, "post-removal check");
+
+                    TestResult::passed()
+                }
+
+                fn cursor_empty_after_n_iterations(xs: Vec<usize>) -> TestResult {
+                    let mut list = $list::new();
+                    for x in xs {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+                    let mut cursor = list.cursor();
+
+                    if !list.is_empty() {
+                        // if the list is not empty, try to cursor over it.
+                        for _ in 0..list.len() - 1 {
+                            if cursor.next_item().is_none() {
+                                return TestResult::failed();
+                            }
+                        }
+                    }
+
+                    if cursor.next_item().is_some() {
+                        return TestResult::failed();
+                    }
+
+                    TestResult::passed()
+
+                }
+
+                fn cursor_same_as_vec_iterator(xs: Vec<usize>) -> TestResult {
+                    let mut list = $list::new();
+                    for x in xs.clone() {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+                    let mut cursor = list.cursor();
+
+                    // if the list is not empty, try to cursor over it.
+                    for x in &xs {
+                        if cursor.get().unwrap() != x {
+                            return TestResult::failed();
+                        }
+                        cursor.move_forward();
+                    }
+
+                    TestResult::passed()
+
+                }
+
+                fn cursor_as_iter(xs: Vec<usize>) -> TestResult {
+                    let mut list = $list::new();
+                    for x in xs.clone() {
+                        list.push_back_node($node_ctor(NumberedNode::new(x)));
+                    }
+
+                    for (l_i, x_i) in list.cursor().zip(xs.iter()) {
+                        assert_eq!(l_i, x_i);
+                    }
+
+                    TestResult::passed()
+
+                }
+            }
+        }
+    }
+}
 mod boxed {
     use super::*;
     use std::boxed::Box;
 
     pub type NumberedList = List<usize, NumberedNode, Box<NumberedNode>>;
 
-    mod cursor {
-        use super::*;
-        use ::Cursor;
-        use quickcheck::TestResult;
-
-        quickcheck! {
-            fn cursor_empty_after_n_iterations(xs: Vec<usize>) -> TestResult {
-                let mut list = NumberedList::new();
-                for x in xs {
-                    list.push_back(x);
-                }
-                let mut cursor = list.cursor();
-
-                if !list.is_empty() {
-                    // if the list is not empty, try to cursor over it.
-                    for _ in 0..list.len() - 1 {
-                        if cursor.next_item().is_none() {
-                            return TestResult::failed();
-                        }
-                    }
-                }
-
-                if cursor.next_item().is_some() {
-                    return TestResult::failed();
-                }
-
-                TestResult::passed()
-
-            }
-
-            fn cursor_same_as_vec_iterator(xs: Vec<usize>) -> TestResult {
-                let mut list = NumberedList::new();
-                for x in xs.clone() {
-                    list.push_back(x);
-                }
-                let mut cursor = list.cursor();
-
-                // if the list is not empty, try to cursor over it.
-                for x in &xs {
-                    if cursor.get().unwrap() != x {
-                        return TestResult::failed();
-                    }
-                    cursor.move_forward();
-                }
-
-                TestResult::passed()
-
-            }
-        }
-    }
+    gen_cursor_tests!{ NumberedList, Box::new }
 
     mod push_node {
         use super::*;
@@ -491,6 +644,8 @@ mod unsafe_ref {
     use UnsafeRef;
 
     pub type UnsafeList = List<usize, NumberedNode, UnsafeRef<NumberedNode>>;
+
+    gen_cursor_tests!{ UnsafeList, UnsafeRef::boxed }
 
     mod push_node {
         use super::*;

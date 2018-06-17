@@ -313,8 +313,8 @@ impl<T: ?Sized> Link<T> {
 
     /// Take `self`, replacing it with `None`
     #[inline]
-    fn take(&mut self) -> Option<Link<T>> {
-        self.0.take().map(|x| Link(Some(x)))
+    fn take(&mut self) -> Option<NonNull<T>> {
+        self.0.take()
     }
 
     /// Swaps the pointed value with `with`, returning the previous pointer.

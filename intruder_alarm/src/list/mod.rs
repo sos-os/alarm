@@ -35,7 +35,7 @@ mod tests;
 /// [`Node`]: trait.Node.html
 /// [`Link`]: ../struct.Link.html
 /// [`OwningRef]: ../trait.OwningRef.html
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct List<T, N, R> {
     /// Link to the head node of the list.
     head: Link<N>,
@@ -156,9 +156,9 @@ pub struct Cursor<'a, T: 'a, N: 'a> {
 
 /// A mutable cursor over the elements of a `List`.
 #[derive(Debug)]
-pub struct CursorMut<'a, T: 'a, N: 'a> {
+pub struct CursorMut<'a, T: 'a, N: 'a, R: 'a> {
     current: Link<N>,
-    _marker: PhantomData<&'a T>,
+    list: &'a mut List<T, N, R>,
 }
 
 //-----------------------------------------------------------------------------
@@ -352,10 +352,10 @@ where
     }
 
     /// Return a mutable `Cursor` over the items of this `List`.
-    pub fn cursor_mut<'a>(&'a mut self) -> CursorMut<'a, T, Node> {
+    pub fn cursor_mut<'a>(&'a mut self) -> CursorMut<'a, T, Node, R> {
         CursorMut {
             current: self.head,
-            _marker: PhantomData,
+            list: self,
         }
     }
 }
@@ -608,7 +608,7 @@ where
 
 // ===== impl CursorMut =====
 
-impl<'a, T, Node> cursor::Cursor for CursorMut<'a, T, Node>
+impl<'a, T, Node, R> cursor::Cursor for CursorMut<'a, T, Node, R>
 where
     Node: Linked,
     Node: AsRef<T>,
@@ -647,11 +647,13 @@ where
 }
 
 /// A cursor that can mutate the parent data structure.
-impl<'a, T, Node> cursor::CursorMut<T> for CursorMut<'a, T, Node>
+impl<'a, T, Node, R> cursor::CursorMut<T, Node> for CursorMut<'a, T, Node, R>
 where
     Node: Linked,
     Node: AsRef<T> + AsMut<T>,
+    R: OwningRef<Node>,
 {
+    type Ref = R;
 
     /// Return a reference to the item currently under the cursor.
     fn get_mut(&mut self) -> Option<&mut T> {
@@ -670,17 +672,40 @@ where
     }
 
     /// Remove the element currently under the cursor.
-    fn remove(&mut self) -> Option<T> {
-        unimplemented!()
-    }
+    fn remove_node(&mut self) -> Option<Self::Ref> {
+        unsafe {
+            self.current.as_ptr().map(|node| {
+                // Unlink the node from the list, by changing the node's
+                // neighbors to point at each other rather than the node.
+                let links = (*node).take_links();
+                let mut next = links.next;
+                let mut prev = links.prev;
 
-    /// Find the first item matching predicate `P` and remove it
-    /// from the data structure.
-    fn remove_first<P>(&mut self, predicate: P) -> Option<T>
-    where
-        P: FnMut(&Self::Item) -> bool
-    {
-        unimplemented!()
+                if let Some(next) = next.as_mut() {
+                    next.links_mut().prev = prev;
+                }
+
+                if let Some(prev) = prev.as_mut() {
+                    prev.links_mut().next = next;
+                }
+
+                // Update the list to reflect that the node was unlinked.
+                self.list.len -= 1;
+
+                if self.list.head.as_ptr() == Some(node) {
+                    self.list.head = next;
+                }
+
+                if self.list.tail.as_ptr() == Some(node) {
+                    self.list.tail = prev;
+                }
+
+                // Update the cursor to point at the next node.
+                self.current = next;
+
+                Self::Ref::from_ptr(node as *const Node)
+            })
+        }
     }
 
     /// Insert the given item before the cursor's position.
