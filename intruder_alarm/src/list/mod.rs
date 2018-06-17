@@ -709,13 +709,75 @@ where
     }
 
     /// Insert the given item before the cursor's position.
-    // TODO: ops::Place impl?
-    fn insert_before(&mut self, item: T) {
-        unimplemented!()
+    fn insert_node_before(&mut self, mut node: Self::Ref)
+    where
+        Self::Ref: DerefMut,
+    {
+        // Link the node to the current node and the current node's
+        // previous node.
+        {
+            let links = node.links_mut();
+            links.next = self.current;
+            links.prev = self.current.as_ref()
+                .map(|current| current.links().prev)
+                .unwrap_or_else(Link::none);
+        }
+
+        // Link the current node and the current node's old previous
+        // node to the new node.
+        let node = Link::from_owning_ref(node);
+        if let Some(current) = self.current.as_mut() {
+            if let Some(mut prev) = current.prev_mut() {
+                prev.links_mut().next = node;
+            }
+            current.links_mut().prev = node;
+        }
+
+        // Update the list's state.
+        unsafe {
+            if self.list.head.as_ptr() == self.current.as_ptr() {
+                self.list.head = node;
+            }
+            if self.list.tail.as_ptr() == self.current.as_ptr() {
+                self.list.tail = node;
+            }
+        }
+        self.current = node;
+        self.list.len += 1;
     }
 
     /// Insert the given item after the cursor's position.
-    fn insert_after(&mut self, item: T) {
-        unimplemented!()
+    fn insert_node_after(&mut self, mut node: Self::Ref)
+    where
+        Self::Ref: DerefMut,
+    {
+        // Link the node to the current node and the current node's
+        // next node.
+        {
+            let links = node.links_mut();
+            links.prev = self.current;
+            links.next = self.current.as_ref()
+                .map(|current| current.links().next)
+                .unwrap_or_else(Link::none);
+        }
+
+        // Link the current node and the current node's old next
+        // node to the new node.
+        let node = Link::from_owning_ref(node);
+        if let Some(current) = self.current.as_mut() {
+            if let Some(mut next) = current.next_mut() {
+                next.links_mut().prev = node;
+            }
+            current.links_mut().next = node;
+        }
+
+        // Update the list's state.
+        unsafe {
+            if self.list.tail.as_ptr() == self.current.as_ptr() {
+                self.list.tail = node;
+            }
+        }
+
+        self.list.len += 1;
     }
 }
