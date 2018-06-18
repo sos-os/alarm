@@ -4,8 +4,8 @@ version = "0.1.0"
 authors = ["Eliza Weisman <eliza@buoyant.io>"]
 
 [dependencies]
-alarm_base = { path = "../alarm-base" }
-intruder_alarm = { path = "../intruder-alarm" }
+alarm-base = { path = "../alarm-base" }
+intruder-alarm = { path = "../intruder-alarm" }
 spin = "0.4.6"
 
 [dependencies.hal9000]

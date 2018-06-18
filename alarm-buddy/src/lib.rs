@@ -9,28 +9,21 @@
 //! ALARM Buddy-Block Allocator
 #![feature(alloc, allocator_api)]
 #![no_std]
-extern crate alloc;
 extern crate alarm_base;
+extern crate alloc;
 extern crate hal9000;
 extern crate intruder_alarm;
 extern crate spin;
 
-use core::{
-    cmp::min,
-    default::Default,
-    ops,
-    ptr::NonNull,
-};
+use core::{cmp::min, default::Default, ops, ptr::NonNull};
 
 use alarm_base::{AllocResult, FrameAllocator};
 use alloc::alloc::{Alloc, AllocErr, Layout};
 use hal9000::mem::{Page, PhysicalAddress};
 use intruder_alarm::{
-    list::{List, Linked, Links},
-    CursorMut,
-    UnsafeRef,
+    list::{Linked, Links, List},
+    CursorMut, UnsafeRef,
 };
-
 
 pub type FreeList = List<FreeBlock, FreeBlock, UnsafeRef<FreeBlock>>;
 
@@ -44,18 +37,15 @@ use self::log2::Log2;
 /// A free block header.
 #[derive(Debug, Default)]
 pub struct FreeBlock {
-
     /// The size of the block (in bytes), including the free block header.
     pub size: usize,
 
     /// Pointers to the previous and next blocks in the free list.
     links: Links<FreeBlock>,
-
 }
 
 /// A buddy-block allocator.
 pub struct Heap<'a, F: 'a> {
-
     /// The heap's minimum block size.
     pub min_block_size: usize,
 
@@ -77,14 +67,12 @@ pub struct Heap<'a, F: 'a> {
 
     /// The underlying frame provider.
     frames: &'a mut F,
-
 }
 
 impl<'a, F> Heap<'a, F>
 where
-    F: FrameAllocator
+    F: FrameAllocator,
 {
-
     /// Computes the size of an allocation request.
     ///
     /// # Arguments
@@ -128,7 +116,8 @@ where
 
     /// Compute the order of the free list for a given `Layout`.
     pub fn block_order(&self, layout: &Layout) -> AllocResult<usize> {
-        self.block_size(layout).map(|size| self.order_from_size(size))
+        self.block_size(layout)
+            .map(|size| self.order_from_size(size))
     }
 
     #[inline]
@@ -161,13 +150,20 @@ where
     }
 
     #[inline]
-    unsafe fn push_block_order(&mut self, block: NonNull<FreeBlock>, order: usize) {
+    unsafe fn push_block_order(
+        &mut self,
+        block: NonNull<FreeBlock>,
+        order: usize,
+    ) {
         self.free_lists[order].push_front_node(block.into());
     }
 
     /// Returns the `buddy` for a given block, if it exists.
-    pub unsafe fn get_buddy(&self, block: NonNull<FreeBlock>, order: usize)
-        -> Option<NonNull<FreeBlock>> {
+    pub unsafe fn get_buddy(
+        &self,
+        block: NonNull<FreeBlock>,
+        order: usize,
+    ) -> Option<NonNull<FreeBlock>> {
         let size = 1 << (self.min_block_size_log2 as usize + order);
 
         // If the block is the size of the entire heap, it obviously
@@ -177,20 +173,20 @@ where
         }
 
         // This is the fun part! Now enterng the horrible pointer math zone...
-        let relative_offset = (block.as_ptr() as usize) - (self.base_ptr as usize);
+        let relative_offset =
+            (block.as_ptr() as usize) - (self.base_ptr as usize);
         let buddy_offset = (relative_offset ^ size) as isize;
-        let buddy_ptr: *mut FreeBlock = self.base_ptr.offset(buddy_offset) as *mut _;
+        let buddy_ptr: *mut FreeBlock =
+            self.base_ptr.offset(buddy_offset) as *mut _;
         NonNull::new(buddy_ptr)
     }
-
 }
 
 impl<'a, F> Heap<'a, F>
 where
     F: FrameAllocator,
-    <<F as FrameAllocator>::Frame as Page>::Address:  PhysicalAddress,
+    <<F as FrameAllocator>::Frame as Page>::Address: PhysicalAddress,
 {
-
     /// Request a new page from the frame allocator, and push it to
     /// the heap's free list corresponding to the allocated frame size.
     ///
@@ -220,15 +216,13 @@ where
 
         Ok(())
     }
-
 }
 
 unsafe impl<'a, F> Alloc for Heap<'a, F>
 where
     F: FrameAllocator,
-    <<F as FrameAllocator>::Frame as Page>::Address:  PhysicalAddress,
+    <<F as FrameAllocator>::Frame as Page>::Address: PhysicalAddress,
 {
-
     /// Allocate a block for the given order.
     ///
     /// This is the core of the buddy-block allocation algorithm. Here's
@@ -257,9 +251,8 @@ where
             // Try to pop a block off the free list, returning `None` if
             // that free list is empty. If the free list is empty, continue to
             // the next free list.
-            if let Some(mut block) = self
-                .free_lists[current_order]
-                .pop_front_node()
+            if let Some(mut block) =
+                self.free_lists[current_order].pop_front_node()
             {
                 let block: NonNull<FreeBlock> = block.into();
                 // If the current order is greater than the minimum required
@@ -290,10 +283,12 @@ where
     }
 
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
-        let order = self.block_order(&layout)
+        let order = self
+            .block_order(&layout)
             .expect("can't deallocate an invalid layout");
 
-        let mut block = FreeBlock::from_ptr_size(ptr.cast::<FreeBlock>(), layout.size());
+        let mut block =
+            FreeBlock::from_ptr_size(ptr.cast::<FreeBlock>(), layout.size());
         // Iterate over the free lists starting at the desired order to
         // search for a free block.
         while let Some(buddy) = self.get_buddy(block, order) {
@@ -310,7 +305,6 @@ where
 
         self.push_block_order(block, order);
     }
-
 }
 
 // ===== impl FreeBlock =====
@@ -326,7 +320,6 @@ impl Linked for FreeBlock {
         &mut self.links
     }
 }
-
 
 impl FreeBlock {
     /// Construct a new unlinked free block header in the given frame and
@@ -354,8 +347,10 @@ impl FreeBlock {
     /// - use of raw `*mut` pointers
     /// - `size` MUST match the size of the free block
     #[inline]
-    unsafe fn from_ptr_size(mut ptr: NonNull<FreeBlock>, size: usize) -> NonNull<Self> {
-
+    unsafe fn from_ptr_size(
+        mut ptr: NonNull<FreeBlock>,
+        size: usize,
+    ) -> NonNull<Self> {
         // Write the free block header into the frame.
         *(ptr.as_mut()) = FreeBlock {
             size,
@@ -390,7 +385,10 @@ impl FreeBlock {
     }
 
     #[inline]
-    unsafe fn merge(a: NonNull<FreeBlock>, b: NonNull<FreeBlock>) -> NonNull<FreeBlock> {
+    unsafe fn merge(
+        a: NonNull<FreeBlock>,
+        b: NonNull<FreeBlock>,
+    ) -> NonNull<FreeBlock> {
         // select the block with the lower address.
         let mut block = min(a, b);
 

@@ -74,16 +74,19 @@ pub trait CursorMut<T, N>: Cursor<Item = T> {
 
     /// Return a reference to the item currently under the cursor.
     fn get_mut(&mut self) -> Option<&mut T>
-    where N: AsMut<T>;
+    where
+        N: AsMut<T>;
 
     /// Return a reference to the next element from the cursor's position.
     fn peek_next_mut(&mut self) -> Option<&mut T>
-    where N: AsMut<T>;
+    where
+        N: AsMut<T>;
 
     /// Return a reference to the previous element from the cursor's
     /// position.
     fn peek_back_mut(&mut self) -> Option<&mut T>
-    where N: AsMut<T>;
+    where
+        N: AsMut<T>;
 
     /// Advance the cursor one element and return a mutable reference to that
     /// element.

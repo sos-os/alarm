@@ -17,18 +17,19 @@ extern crate alloc;
 extern crate core;
 extern crate hal9000;
 extern crate spin;
-extern crate hal9000;
 
 pub mod frame;
 #[cfg(feature = "lend")]
 pub mod lend;
 
-/// Type alias for the result of an allocation attempt.
-pub type AllocResult<T> = Result<T, alloc::allocator::AllocErr>;
 
 pub use self::frame::Allocator as FrameAllocator;
 use core::alloc::{Alloc, AllocErr, Layout};
 use core::ptr;
+
+
+/// Type alias for the result of an allocation attempt.
+pub type AllocResult<T> = Result<T, AllocErr>;
 
 /// An allocator behind a mutex.
 #[derive(Debug)]

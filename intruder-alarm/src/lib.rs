@@ -183,9 +183,7 @@ impl<T: ?Sized> UnsafeRef<T> {
     }
 }
 
-
 impl<T: ?Sized> UnsafeRef<T> {
-
     /// Convert a raw `*mut T` pointer into an `UnsafeRef`.
     ///
     /// # Panics
@@ -204,7 +202,6 @@ impl<T: ?Sized> UnsafeRef<T> {
     pub unsafe fn as_mut_ptr(&mut self) -> *mut T {
         self.0.as_ptr()
     }
-
 }
 impl<T: ?Sized> Clone for UnsafeRef<T> {
     #[inline]

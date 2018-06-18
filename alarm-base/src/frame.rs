@@ -1,7 +1,7 @@
 //! Base types for page frame allocators.
-use core::alloc::{Layout, AllocErr};
-use ::AllocResult;
+use core::alloc::{AllocErr, Layout};
 use hal9000::mem::Page;
+use ::AllocResult;
 
 /// An allocator that provides page frames.
 pub unsafe trait Allocator {
@@ -37,27 +37,25 @@ pub unsafe trait Allocator {
 pub struct FrameCache<F>([Option<F>; 3]);
 
 impl<F> FrameCache<F> {
-
     /// Construct a new `FrameCache` from three provided frames.
     pub fn from_frames(f1: F, f2: F, f3: F) -> Self {
         FrameCache([Some(f1), Some(f2), Some(f3)])
     }
-
 }
 
 impl<F> FrameCache<F>
 where
     F: Page,
 {
-
     /// Construct a new `FrameCache` with frames allocated
     /// by the provided `Allocator`.
     pub fn from_alloc<A>(alloc: &mut A) -> Self
-    where A: Allocator<Frame=F> {
+    where
+        A: Allocator<Frame = F>,
+    {
         unsafe {
-            let frames = [ alloc.alloc().ok()
-                         , alloc.alloc().ok()
-                         , alloc.alloc().ok() ];
+            let frames =
+                [alloc.alloc().ok(), alloc.alloc().ok(), alloc.alloc().ok()];
             FrameCache(frames)
         }
     }
@@ -67,7 +65,6 @@ unsafe impl<F> Allocator for FrameCache<F>
 where
     F: Page,
 {
-
     type Frame = F;
 
     const FRAME_SIZE: usize = <F as Page>::SIZE;
@@ -95,5 +92,4 @@ where
             // })
             .ok_or(AllocErr)
     }
-
 }
