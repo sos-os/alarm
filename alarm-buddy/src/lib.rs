@@ -15,15 +15,20 @@ extern crate hal9000;
 extern crate intruder_alarm;
 extern crate spin;
 
-use core::cmp::min;
-use core::default::Default;
-use core::ops;
+use core::{
+    cmp::min,
+    default::Default,
+    ops,
+    ptr::NonNull,
+};
 
 use alarm_base::{AllocResult, FrameAllocator};
-use alloc::allocator::{Alloc, AllocErr, Layout};
+use alloc::alloc::{Alloc, AllocErr, Layout};
 use hal9000::mem::{Page, PhysicalAddress};
-use intruder_alarm::list::{List, Linked, Links};
-use intruder_alarm::UnsafeRef;
+use intruder_alarm::{
+    list::{List, Linked, Links},
+    UnsafeRef,
+};
 
 
 pub type FreeList = List<FreeBlock, FreeBlock, UnsafeRef<FreeBlock>>;
@@ -83,23 +88,21 @@ where
     ///
     /// # Arguments
     /// + `layout`: the `Layout` to compute the size for.
-    pub fn block_size(&self, layout: &Layout) -> Result<usize, AllocErr> {
+    pub fn block_size(&self, layout: &Layout) -> AllocResult<usize> {
         let align = layout.align();
 
         // We cannot allocate layouts whose alignments are not powers of 2.
         if !align.is_power_of_two() {
-            Err(AllocErr::Unsupported {
-                details: "Unsupported alignment (not a power of 2)."
-            })?;
+            // TODO: "Unsupported alignment (not a power of 2)."
+            return Err(AllocErr);
         }
 
         // We cannot allocate layouts with alignments greater than the
         // heap's base alignment (the size of a frame in the underlying
         // frame provider).
         if align > F::FRAME_SIZE {
-            Err(AllocErr::Unsupported {
-                details: "Unsupported alignment (exceeded FRAME_SIZE)."
-            })?;
+            // TODO: log "Unsupported alignment (exceeded FRAME_SIZE)."
+            return Err(AllocErr)?;
         }
 
         // The allocation's size must be at least as large as the layout's
@@ -115,16 +118,15 @@ where
         // If the resulting size of the allocation is greater than the
         // size of the heap,we (obviously) cannot allocate the request.
         if size > self.heap_size {
-            Err(AllocErr::Unsupported {
-                details: "Unsupported size for alignment (exceeded heap size)."
-            })?;
+            // TODO: log "Unsupported size for alignment (exceeded heap size)."
+            return Err(AllocErr);
         }
 
         Ok(size)
     }
 
     /// Compute the order of the free list for a given `Layout`.
-    pub fn block_order(&self, layout: &Layout) -> Result<usize, AllocErr> {
+    pub fn block_order(&self, layout: &Layout) -> AllocResult<usize> {
         self.block_size(layout).map(|size| self.order_from_size(size))
     }
 
@@ -152,20 +154,20 @@ where
     ///   requests which exceed the block's size. This may result in
     ///   writes to already allocated memory.
     #[inline]
-    pub unsafe fn push_block(&mut self, block: *mut FreeBlock) {
+    pub unsafe fn push_block(&mut self, block: NonNull<FreeBlock>) {
         let order = self.order_from_size((*block).size);
         self.push_block_order(block, order);
     }
 
     #[inline]
-    unsafe fn push_block_order(&mut self, block: *mut FreeBlock, order: usize) {
+    unsafe fn push_block_order(&mut self, block: NonNull<FreeBlock>, order: usize) {
         let block_ref = UnsafeRef::from_mut_ptr(block);
         self.free_lists[order].push_front_node(block_ref);
     }
 
     /// Returns the `buddy` for a given block, if it exists.
-    pub unsafe fn get_buddy(&self, block: *mut FreeBlock, order: usize)
-        -> Option<*mut FreeBlock> {
+    pub unsafe fn get_buddy(&self, block: NonNull<FreeBlock>, order: usize)
+        -> Option<NonNull<FreeBlock>> {
         let size = 1 << (self.min_block_size_log2 as usize + order);
 
         // If the block is the size of the entire heap, it obviously
@@ -241,7 +243,7 @@ where
     ///      - Repeat step 2.
     ///    - If there’s no larger free block:
     ///        - The allocation fails: return OOM.
-    unsafe fn alloc(&mut self, layout: Layout) -> AllocResult<*mut u8> {
+    unsafe fn alloc(&mut self, layout: Layout) -> AllocResult<NonNull<u8>> {
         // Try to calculate the minimum order necessary for the requested
         // layout, or return `AllocErr::Unsupported` if the layout is
         // invalid.
@@ -280,17 +282,18 @@ where
         // TODO: this could be optimized by making it iterative rather than
         //       recursive...
         // TODO: upper bound on number of times the allocator can be refilled?
-        let err = AllocErr::Exhausted { request: layout.clone() };
+        // TODO: nicer error?
+        // let err = AllocErr::Exhausted { request: layout.clone() };
         self.refill()?;
-        self.alloc(layout).map_err(|_| err)
+        self.alloc(layout)
     }
 
-    unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
+    unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
 
         let mut order = self.block_order(&layout)
             .expect("can't deallocate an invalid layout");
 
-        let mut block = FreeBlock::from_ptr_size(ptr as *mut _, layout.size());
+        let mut block = FreeBlock::from_ptr_size(ptr.cast::<FreeBlock>(), layout.size());
         // Iterate over the free lists starting at the desired order to
         // search for a free block.
         while let Some(buddy) = self.get_buddy(block, order) {
@@ -326,14 +329,17 @@ impl FreeBlock {
     /// Construct a new unlinked free block header in the given frame and
     /// return it.
     #[inline]
-    unsafe fn from_frame<F, A>(frame: F) -> *mut Self
+    unsafe fn from_frame<F, A>(frame: F) -> NonNull<Self>
     where
         F: Page<Address = A>,
         A: PhysicalAddress,
     {
         // Get a mutable reference to the frame's start address. We will
         // use this pointer to write the free block header, and then return it.
-        let ptr: *mut FreeBlock = frame.base_address().as_mut_ptr();
+        let ptr = NonNull::new(frame.base_address().as_mut_ptr())
+            // TOOD: do we trust frame start addresses enough to use
+            //      `NonNull::new_unchecked` here instead? I don't know...
+            .expect("frame start address was null!");
         Self::from_ptr_size(ptr, F::SIZE)
     }
 
@@ -345,11 +351,10 @@ impl FreeBlock {
     /// - use of raw `*mut` pointers
     /// - `size` MUST match the size of the free block
     #[inline]
-    unsafe fn from_ptr_size(ptr: *mut FreeBlock, size: usize) -> *mut Self {
-        let ptr: *mut FreeBlock = ptr as *mut _;
+    unsafe fn from_ptr_size(ptr: NonNull<FreeBlock>, size: usize) -> NonNull<Self> {
 
         // Write the free block header into the frame.
-        *ptr = FreeBlock {
+        *ptr.as_mut() = FreeBlock {
             size,
             ..Default::default()
         };
@@ -362,13 +367,14 @@ impl FreeBlock {
     /// `block` still points to the beginning of the free block, while the
     /// returned pointer points to a new free block header in the half that was
     /// split.
-    unsafe fn split(block: *mut FreeBlock) -> *mut Self {
+    unsafe fn split(block: NonNull<FreeBlock>) -> NonNull<Self> {
+        let block = block.as_ptr();
         //   H_______________
         //   ^
         // `block` points to the header of the block.
         (*block).size >>= 1;
         let size = (*block).size;
-        let split_ptr = block.offset(size as isize);
+        let split_ptr = NonNull::new_unchecked(block.offset(size as isize));
         //   H_______________
         //   ^       ^
         //   |  `split_ptr` now points to an address halfway into the free block
@@ -381,13 +387,13 @@ impl FreeBlock {
     }
 
     #[inline]
-    unsafe fn merge(a: *mut FreeBlock, b: *mut FreeBlock) -> *mut FreeBlock {
+    unsafe fn merge(a: NonNull<FreeBlock>, b: NonNull<FreeBlock>) -> NonNull<FreeBlock> {
         // select the block with the lower address.
         let block = min(a, b);
 
         // sum the sizes of the merged blocks and set the size of the new
         // block equal to the sum.
-        (*block).size = (*a).size + (*b).size;
+        block.as_mut().size = a.as_ref().size + b.as_ref().size;
 
         // return the merged block pointer
         block
