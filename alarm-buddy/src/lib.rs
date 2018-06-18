@@ -297,7 +297,11 @@ where
         // Iterate over the free lists starting at the desired order to
         // search for a free block.
         while let Some(buddy) = self.get_buddy(block, order) {
-            if self.free_lists[order].cursor_mut().find_and_remove(|checking| checking as *mut _ == buddy) {
+            let removed = self.free_lists[order]
+                .cursor_mut()
+                .remove_first_node(|checking| NonNull::from(checking) == buddy)
+                .is_some();
+            if removed {
                 block = FreeBlock::merge(block, buddy);
             } else {
                 break;
