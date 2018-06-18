@@ -263,6 +263,13 @@ where
     }
 }
 
+impl<T: ?Sized> Into<NonNull<T>> for UnsafeRef<T> {
+    #[inline]
+    fn into(self) -> NonNull<T> {
+        self.0
+    }
+}
+
 unsafe impl<T: ?Sized> OwningRef<T> for UnsafeRef<T> {
     #[inline]
     fn into_ptr(self) -> *const T {

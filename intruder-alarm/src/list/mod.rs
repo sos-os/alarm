@@ -657,18 +657,24 @@ where
 impl<'a, T, Node, R> cursor::CursorMut<T, Node> for CursorMut<'a, T, Node, R>
 where
     Node: Linked,
-    Node: AsRef<T> + AsMut<T>,
+    Node: AsRef<T>,
     R: OwningRef<Node>,
 {
     type Ref = R;
 
     /// Return a reference to the item currently under the cursor.
-    fn get_mut(&mut self) -> Option<&mut T> {
+    fn get_mut(&mut self) -> Option<&mut T>
+    where
+        Node: AsMut<T>,
+    {
         self.current.as_mut().map(Node::as_mut)
     }
 
     /// Return a reference to the next element from the cursor's position.
-    fn peek_next_mut(&mut self) -> Option<&mut T> {
+    fn peek_next_mut(&mut self) -> Option<&mut T>
+    where
+        Node: AsMut<T>,
+    {
         self.current
             .as_mut()
             .and_then(Linked::next_mut)
@@ -677,7 +683,10 @@ where
 
     /// Return a reference to the previous element from the cursor's
     /// position.
-    fn peek_back_mut(&mut self) -> Option<&mut T> {
+    fn peek_back_mut(&mut self) -> Option<&mut T>
+    where
+        Node: AsMut<T>,
+    {
         self.current
             .as_mut()
             .and_then(Linked::prev_mut)
