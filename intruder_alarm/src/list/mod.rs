@@ -10,7 +10,7 @@
 use cursor::{self, Cursor as CursorTrait};
 use {Link, OwningRef, UnsafeRef};
 
-use core::iter::{self, DoubleEndedIterator, Extend, FromIterator, Iterator};
+use core::iter::{DoubleEndedIterator, Extend, FromIterator, Iterator};
 use core::marker::PhantomData;
 use core::mem;
 use core::ops::DerefMut;
@@ -532,12 +532,6 @@ impl<T> Links<T> {
     #[inline]
     fn prev_mut(&mut self) -> Option<&mut T> {
         self.prev.as_mut()
-    }
-
-    /// Returns true if this set of links is a member of a list.
-    #[inline]
-    fn is_linked(&self) -> bool {
-        self.next.is_some()
     }
 }
 

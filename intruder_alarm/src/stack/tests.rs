@@ -229,7 +229,6 @@ mod unsafe_ref {
 
     mod push_node {
         use super::*;
-        use std::boxed::Box;
         use UnsafeRef;
 
         #[test]

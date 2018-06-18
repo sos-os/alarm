@@ -47,11 +47,13 @@ extern crate core;
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-use core::borrow::Borrow;
-use core::default::Default;
-use core::ops::{Deref, DerefMut};
-use core::ptr::NonNull;
-use core::{fmt, mem};
+use core::{
+    borrow::Borrow,
+    default::Default,
+    ops::{Deref, DerefMut},
+    ptr::NonNull,
+    fmt,
+};
 
 pub mod cursor;
 pub use self::cursor::{Cursor, CursorMut};
@@ -146,7 +148,7 @@ impl<T: ?Sized> UnsafeRef<T> {
         )
     )]
     pub fn from_box(b: Box<T>) -> Self {
-        unsafe { UnsafeRef(Box::into_raw_non_null(b)) }
+        UnsafeRef(Box::into_raw_non_null(b))
     }
 
     /// Construct a new `UnsafeRef` from a `T`, using `Box::new` to allocate a
@@ -297,30 +299,6 @@ impl<T: ?Sized> Link<T> {
 
     unsafe fn as_ptr(&mut self) -> Option<*mut T> {
         self.0.as_mut().map(|shared| shared.as_ptr())
-    }
-
-    /// Returns true if this link is empty.
-    #[inline]
-    fn is_none(&self) -> bool {
-        self.0.is_none()
-    }
-
-    /// Returns true if this link is non-empty.
-    #[inline]
-    fn is_some(&self) -> bool {
-        self.0.is_some()
-    }
-
-    /// Take `self`, replacing it with `None`
-    #[inline]
-    fn take(&mut self) -> Option<NonNull<T>> {
-        self.0.take()
-    }
-
-    /// Swaps the pointed value with `with`, returning the previous pointer.
-    #[inline]
-    unsafe fn replace<I: Into<Link<T>>>(&mut self, with: I) -> Link<T> {
-        mem::replace(self, with.into())
     }
 
     fn from_owning_ref<R>(reference: R) -> Self

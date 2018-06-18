@@ -71,7 +71,7 @@ macro_rules! gen_cursor_tests {
     ($list:tt, $node_ctor:path) => {
         mod cursor {
             use super::*;
-            use ::{Cursor, CursorMut};
+            use ::CursorMut;
             use quickcheck::TestResult;
 
             quickcheck! {
@@ -792,7 +792,6 @@ mod unsafe_ref {
 
     mod push_node {
         use super::*;
-        use std::boxed::Box;
         use UnsafeRef;
 
         #[test]

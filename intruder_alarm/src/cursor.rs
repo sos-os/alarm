@@ -146,7 +146,7 @@ where
 
     /// Insert the given node before the cursor's position.
     // TODO: ops::Place impl?
-    fn insert_node_before(&mut self, mut node: Self::Ref) -> &mut Self
+    fn insert_node_before(&mut self, node: Self::Ref) -> &mut Self
     where
         Self::Ref: ops::DerefMut;
 

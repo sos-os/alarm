@@ -131,12 +131,10 @@ where
 {
     /// Push a node on to the stack.
     pub fn push_node(&mut self, mut node: Ref) -> &mut Self {
-        unsafe {
-            *node.next_mut() = self.top;
-            let node = Link::from_owning_ref(node);
-            self.top = node;
-            self.len += 1;
-        };
+        *node.next_mut() = self.top;
+        let node = Link::from_owning_ref(node);
+        self.top = node;
+        self.len += 1;
         self
     }
 }
