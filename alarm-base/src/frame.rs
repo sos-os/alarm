@@ -77,19 +77,23 @@ where
             .find(|frame| frame.is_some())
             .and_then(|frame| frame.take())
             // .map(|frame| { trace!("frameCache: alloced {:?}", &frame); frame})
-            .ok_or(AllocErr::Exhausted {
-                request: Layout::from_size_align(
-                    Self::FRAME_SIZE, Self::FRAME_SIZE).unwrap()
-            })
+            // TODO: more descriptive error type...
+            // .ok_or(AllocErr::Exhausted {
+            //     request: Layout::from_size_align(
+            //         Self::FRAME_SIZE, Self::FRAME_SIZE).unwrap()
+            // })
+            .ok_or(AllocErr)
     }
 
     unsafe fn dealloc(&mut self, frame: Self::Frame) -> AllocResult<()> {
         self.0.iter_mut()
             .find(|slot| slot.is_none())
             .and_then(|slot| { *slot = Some(frame); Some(()) })
-            .ok_or(AllocErr::Unsupported {
-                details: "FrameCache can only hold three frames!"
-            })
+            // TODO: more descriptive error type
+            // .ok_or(AllocErr::Unsupported {
+            //     details: "FrameCache can only hold three frames!"
+            // })
+            .ok_or(AllocErr)
     }
 
 }

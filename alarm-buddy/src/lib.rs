@@ -27,6 +27,7 @@ use alloc::alloc::{Alloc, AllocErr, Layout};
 use hal9000::mem::{Page, PhysicalAddress};
 use intruder_alarm::{
     list::{List, Linked, Links},
+    CursorMut,
     UnsafeRef,
 };
 
@@ -155,14 +156,13 @@ where
     ///   writes to already allocated memory.
     #[inline]
     pub unsafe fn push_block(&mut self, block: NonNull<FreeBlock>) {
-        let order = self.order_from_size((*block).size);
+        let order = self.order_from_size(block.as_ref().size);
         self.push_block_order(block, order);
     }
 
     #[inline]
     unsafe fn push_block_order(&mut self, block: NonNull<FreeBlock>, order: usize) {
-        let block_ref = UnsafeRef::from_mut_ptr(block);
-        self.free_lists[order].push_front_node(block_ref);
+        self.free_lists[order].push_front_node(block.into());
     }
 
     /// Returns the `buddy` for a given block, if it exists.
@@ -176,9 +176,11 @@ where
             return None;
         }
 
-        let relative_offset = (block as usize) - (self.base_ptr as usize);
+        // This is the fun part! Now enterng the horrible pointer math zone...
+        let relative_offset = (block.as_ptr() as usize) - (self.base_ptr as usize);
         let buddy_offset = (relative_offset ^ size) as isize;
-        Some(self.base_ptr.offset(buddy_offset) as *mut _)
+        let buddy_ptr: *mut FreeBlock = self.base_ptr.offset(buddy_offset) as *mut _;
+        NonNull::new(buddy_ptr)
     }
 
 }
@@ -259,8 +261,7 @@ where
                 .free_lists[current_order]
                 .pop_front_node()
             {
-                let block = block.as_mut_ptr();
-
+                let block: NonNull<FreeBlock> = block.into();
                 // If the current order is greater than the minimum required
                 // order for the allocation, split the block in half until it
                 // matches the requested order.
@@ -274,7 +275,7 @@ where
                     self.push_block_order(split, split_order);
                 }
 
-                return Ok(block as *mut _);
+                return Ok(block.cast::<u8>());
             }
         }
 
@@ -289,8 +290,7 @@ where
     }
 
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
-
-        let mut order = self.block_order(&layout)
+        let order = self.block_order(&layout)
             .expect("can't deallocate an invalid layout");
 
         let mut block = FreeBlock::from_ptr_size(ptr.cast::<FreeBlock>(), layout.size());
@@ -325,7 +325,6 @@ impl Linked for FreeBlock {
 
 
 impl FreeBlock {
-
     /// Construct a new unlinked free block header in the given frame and
     /// return it.
     #[inline]
@@ -351,10 +350,10 @@ impl FreeBlock {
     /// - use of raw `*mut` pointers
     /// - `size` MUST match the size of the free block
     #[inline]
-    unsafe fn from_ptr_size(ptr: NonNull<FreeBlock>, size: usize) -> NonNull<Self> {
+    unsafe fn from_ptr_size(mut ptr: NonNull<FreeBlock>, size: usize) -> NonNull<Self> {
 
         // Write the free block header into the frame.
-        *ptr.as_mut() = FreeBlock {
+        *(ptr.as_mut()) = FreeBlock {
             size,
             ..Default::default()
         };
@@ -389,7 +388,7 @@ impl FreeBlock {
     #[inline]
     unsafe fn merge(a: NonNull<FreeBlock>, b: NonNull<FreeBlock>) -> NonNull<FreeBlock> {
         // select the block with the lower address.
-        let block = min(a, b);
+        let mut block = min(a, b);
 
         // sum the sizes of the merged blocks and set the size of the new
         // block equal to the sum.
@@ -398,5 +397,13 @@ impl FreeBlock {
         // return the merged block pointer
         block
     }
+}
 
+// This is just to placate the `CursorMut` bounds...
+// TODO: Can we make this unnecessary in `CursorMut`?
+impl AsRef<FreeBlock> for FreeBlock {
+    #[inline]
+    fn as_ref(&self) -> &FreeBlock {
+        self
+    }
 }
