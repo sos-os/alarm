@@ -6,8 +6,7 @@
 //  directory of this repository for more information.
 //
 
-use super::Linked;
-use super::*;
+use super::{Linked, *};
 use quickcheck::TestResult;
 use std::default::Default;
 
@@ -22,7 +21,7 @@ pub type NumberedList = Stack<usize, NumberedNode, Box<NumberedNode>>;
 impl NumberedNode {
     pub fn new(number: usize) -> Self {
         NumberedNode {
-            number: number,
+            number,
             ..Default::default()
         }
     }

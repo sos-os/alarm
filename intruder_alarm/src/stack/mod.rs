@@ -9,10 +9,12 @@
 //! like the allocator implementation itself, since each list element manages
 //! its own memory.
 use super::{Link, OwningRef, UnsafeRef};
-use core::iter::{Extend, FromIterator};
-use core::marker::PhantomData;
-use core::mem;
-use core::ops::DerefMut;
+use core::{
+    iter::{Extend, FromIterator},
+    marker::PhantomData,
+    mem,
+    ops::DerefMut,
+};
 
 #[cfg(test)]
 mod tests;

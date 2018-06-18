@@ -50,9 +50,9 @@ extern crate alloc;
 use core::{
     borrow::Borrow,
     default::Default,
+    fmt,
     ops::{Deref, DerefMut},
     ptr::NonNull,
-    fmt,
 };
 
 pub mod cursor;

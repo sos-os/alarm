@@ -8,12 +8,16 @@
 //! like the allocator implementation itself, since each list element manages
 //! its own memory.
 use cursor::{self, Cursor as CursorTrait};
-use {Link, OwningRef, UnsafeRef};
+use Link;
+use OwningRef;
+use UnsafeRef;
 
-use core::iter::{DoubleEndedIterator, Extend, FromIterator, Iterator};
-use core::marker::PhantomData;
-use core::mem;
-use core::ops::DerefMut;
+use core::{
+    iter::{DoubleEndedIterator, Extend, FromIterator, Iterator},
+    marker::PhantomData,
+    mem,
+    ops::DerefMut,
+};
 
 #[cfg(test)]
 mod tests;
