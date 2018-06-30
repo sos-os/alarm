@@ -15,6 +15,7 @@
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate core;
+extern crate hal9000;
 extern crate spin;
 
 pub mod frame;
