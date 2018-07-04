@@ -1,10 +1,10 @@
 # as the project maintainer, Eliza should review all PRs.
 *   @hawkw
 
-# intruder_alarm's singly-linked list implementation was
+# intruder-alarm's singly-linked list implementation was
 # originally contributed by @amanjeev, so he should review
 # any changes to it.
-intruder_alarm/src/singly/  @amanjeev @hawkw
+intruder-alarm/src/singly/  @amanjeev @hawkw
 
 # @leshow is now our resident rustfmt expert.
 rustfmt.toml    @leshow @hawkw

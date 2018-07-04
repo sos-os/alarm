@@ -12,8 +12,8 @@ Crates
 
 | Crate             | Description                                                       |
 |-------------------|-------------------------------------------------------------------|
-| `alarm_base`      | Base types and API definitions shared across ALARM allocators.    |
-| `intruder_alarm`  | Intrusive collections library used for allocator data structures. |
+| `alarm-base`      | Base types and API definitions shared across ALARM allocators.    |
+| `intruder-alarm`  | Intrusive collections library used for allocator data structures. |
 | `slabby`          | Slab allocators composable on top of ALARM allocators.            |
 
 

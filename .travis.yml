@@ -6,7 +6,7 @@ env:
 - FEATURES=""
 
 script:
-- cd intruder_alarm
+- cd intruder-alarm
 # we have to cd into the dir rather than using cargo test -p
 # since cargo test -p won't pass feature flags.
 - cargo test --features=$FEATURES

@@ -23,7 +23,6 @@
 //!
 //! # Features
 //! + `std`: use the Rust standard library (`std`), rather than `core`.
-#![crate_name = "intruder_alarm"]
 #![crate_type = "lib"]
 // Use `no_std` attribute unless we are running tests or compiling with
 // the "std" feature.
