@@ -23,7 +23,7 @@ pub mod frame;
 pub mod lend;
 
 pub use self::frame::Allocator as FrameAllocator;
-use alloc::allocator::{Alloc, AllocErr, Layout};
+use core::alloc::{Alloc, AllocErr, Layout};
 use core::ptr;
 
 /// An allocator behind a mutex.

@@ -1,5 +1,5 @@
 //! Base types for page frame allocators.
-use alloc::allocator::AllocErr;
+use core::alloc::AllocErr;
 use hal9000::mem::Page;
 
 /// An allocator that provides page frames.
