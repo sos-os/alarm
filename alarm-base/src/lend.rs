@@ -10,8 +10,12 @@
 //! Borrowed handles on allocations with fixed (Rust) lifetimes,
 //!
 //! or, "So You've Always Wished `*mut u8` Could `impl Drop`..."
-use core::alloc::{Alloc, AllocErr, Layout};
-use core::{mem, ops, ptr};
+use core::{
+    alloc::{Alloc, AllocErr, Layout},
+    mem,
+    ops,
+    ptr,
+};
 
 /// An allocator that can provide borrowed handles.
 pub trait Lend: Alloc + Sized {
