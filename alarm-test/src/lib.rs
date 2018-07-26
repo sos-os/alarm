@@ -37,7 +37,7 @@ impl Page for MockFrame {
     }
 
     fn end_address(&self) -> Self::Address {
-        MockAddress(self.frame[0])
+        MockAddress(self.frame[Self::SIZE - 1])
     }
 
     fn number(&self) -> usize {
