@@ -11,8 +11,8 @@ use hal9000::{
 };
 
 #[derive(Address)]
-#[address_repr(u8)]
-pub struct MockAddress(u8);
+#[address_repr(usize)]
+pub struct MockAddress(usize);
 
 struct MockFrame {
     number: usize,
@@ -33,15 +33,15 @@ impl Page for MockFrame {
     }
 
     fn base_address(&self) -> Self::Address {
-        MockAddress(self.frame[0])
+        MockAddress(&self.frame[0] as *const _ as usize)
     }
 
     fn end_address(&self) -> Self::Address {
-        MockAddress(self.frame[Self::SIZE - 1])
+        MockAddress(&self.frame[Self::SIZE - 1] as *const _ as usize)
     }
 
     fn number(&self) -> usize {
-        &self.number as *const _ as usize
+        self.number
     }
 }
 
