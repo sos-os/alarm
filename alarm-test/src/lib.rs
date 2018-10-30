@@ -10,6 +10,7 @@ use hal9000::{
     util::{self, Align},
 };
 
+
 #[derive(Address)]
 #[address_repr(usize)]
 pub struct MockAddress(usize);
@@ -49,6 +50,13 @@ impl Page for MockFrame {
 mod tests {
     #[test]
     fn it_fn_works_alarm_test() {
-        assert_eq!(2 + 2, 4);
+        use super::*;
+
+        let f = MockFrame { number: 0, frame: [0; 4096]};
+
+        println!("{:?}", f.base_address());
+        println!("{:?}", f.end_address());
+
+
     }
 }
