@@ -32,7 +32,6 @@
     any(feature = "alloc", feature = "std", test),
     feature(box_into_raw_non_null)
 )]
-#![feature(shared)]
 #![feature(const_fn)]
 #![deny(missing_docs)]
 
