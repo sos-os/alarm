@@ -22,7 +22,7 @@ struct MockFrame {
 
 impl Page for MockFrame {
     const SHIFT: usize = 0;
-    const SIZE: usize = 4096;
+    const SIZE: usize = 16;
     type Address = MockAddress;
 
     fn from_addr_up(addr: Self::Address) -> Self {
@@ -49,14 +49,10 @@ impl Page for MockFrame {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn it_fn_works_alarm_test() {
+    fn it_fn_works_alarm_test_basic() {
         use super::*;
 
-        let f = MockFrame { number: 0, frame: [0; 4096]};
-
-        println!("{:?}", f.base_address());
-        println!("{:?}", f.end_address());
-
-
+        let f = MockFrame {number: 0, frame: [0; 4096]};
+        assert_eq!(f.base_address().0, f.end_address().0 - 15);
     }
 }
