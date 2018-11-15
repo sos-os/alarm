@@ -4,7 +4,6 @@ extern crate hal9000;
 extern crate hal9000_derive;
 extern crate core;
 
-use core::{cmp, ops};
 use hal9000::{
     mem::{Address, Page},
     util::{self, Align},
@@ -25,11 +24,11 @@ impl Page for MockFrame {
     const SIZE: usize = 16;
     type Address = MockAddress;
 
-    fn from_addr_up(addr: Self::Address) -> Self {
+    fn from_addr_up(_addr: Self::Address) -> Self {
         unimplemented!()
     }
 
-    fn from_addr_down(addr: Self::Address) -> Self {
+    fn from_addr_down(_addr: Self::Address) -> Self {
         unimplemented!()
     }
 
