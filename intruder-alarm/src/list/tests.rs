@@ -418,7 +418,7 @@ mod boxed {
 
     pub type NumberedList = List<usize, NumberedNode, Box<NumberedNode>>;
 
-    gen_cursor_tests!{ NumberedList, Box::new }
+    gen_cursor_tests! { NumberedList, Box::new }
 
     mod push_node {
         use super::*;
@@ -787,7 +787,7 @@ mod unsafe_ref {
 
     pub type UnsafeList = List<usize, NumberedNode, UnsafeRef<NumberedNode>>;
 
-    gen_cursor_tests!{ UnsafeList, UnsafeRef::boxed }
+    gen_cursor_tests! { UnsafeList, UnsafeRef::boxed }
 
     mod push_node {
         use super::*;

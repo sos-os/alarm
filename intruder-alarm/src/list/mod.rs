@@ -522,7 +522,7 @@ impl<T> Links<T> {
     ///
     /// # Returns
     /// - `Some(&mut T)` if there is a next element in the list.
-    /// -  or `None` if this is the last.
+    /// - or `None` if this is the last.
     #[inline]
     fn next_mut(&mut self) -> Option<&mut T> {
         self.next.as_mut()
@@ -532,7 +532,7 @@ impl<T> Links<T> {
     ///
     /// # Returns
     /// - `Some(&mut T)` if there is a previous element in the list.
-    /// -  or `None` if this is the first.
+    /// - or `None` if this is the first.
     #[inline]
     fn prev_mut(&mut self) -> Option<&mut T> {
         self.prev.as_mut()

@@ -80,7 +80,6 @@ pub unsafe trait OwningRef<T: ?Sized>: Deref<Target = T> {
 pub struct UnsafeRef<T: ?Sized>(NonNull<T>);
 
 /// A `Link` provides an [`Option`]-like interface to a [`NonNull`] pointer.
-///
 #[derive(Eq, PartialEq)]
 pub struct Link<T: ?Sized>(Option<NonNull<T>>);
 
@@ -140,10 +139,8 @@ impl<T: ?Sized> UnsafeRef<T> {
     #[inline]
     #[cfg_attr(
         not(test),
-        deprecated(
-            note = "Use of `UnsafeRef` is likely to be unnecessary \
-                    when `Box` is available."
-        )
+        deprecated(note = "Use of `UnsafeRef` is likely to be unnecessary \
+                           when `Box` is available.")
     )]
     pub fn from_box(b: Box<T>) -> Self {
         UnsafeRef(Box::into_raw_non_null(b))
@@ -169,10 +166,8 @@ impl<T: ?Sized> UnsafeRef<T> {
     #[inline]
     #[cfg_attr(
         not(test),
-        deprecated(
-            note = "Use of `UnsafeRef` is likely to be unnecessary \
-                    when `Box` is available."
-        )
+        deprecated(note = "Use of `UnsafeRef` is likely to be unnecessary \
+                           when `Box` is available.")
     )]
     pub fn boxed(t: T) -> Self
     where

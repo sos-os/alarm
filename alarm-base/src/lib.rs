@@ -7,7 +7,6 @@
 //  directory of this repository for more information.
 //
 //! Base types for ALARM allocators
-//!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 #![feature(alloc, allocator_api)]
@@ -23,8 +22,10 @@ pub mod frame;
 pub mod lend;
 
 pub use self::frame::Allocator as FrameAllocator;
-use core::alloc::{Alloc, AllocErr, Layout};
-use core::ptr;
+use core::{
+    alloc::{Alloc, AllocErr, Layout},
+    ptr,
+};
 
 /// An allocator behind a mutex.
 #[derive(Debug)]
