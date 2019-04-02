@@ -5,6 +5,7 @@ authors = ["Eliza Weisman <eliza@buoyant.io>"]
 description = """
 Intrusive collections for ALARM allocators.
 """
+edition = "2018"
 
 [features]
 std = []

@@ -70,7 +70,7 @@ macro_rules! gen_cursor_tests {
     ($list:tt, $node_ctor:path) => {
         mod cursor {
             use super::*;
-            use ::CursorMut;
+            use crate::CursorMut;
             use quickcheck::TestResult;
 
             quickcheck! {
@@ -783,7 +783,7 @@ mod boxed {
 
 mod unsafe_ref {
     use super::*;
-    use UnsafeRef;
+    use crate::UnsafeRef;
 
     pub type UnsafeList = List<usize, NumberedNode, UnsafeRef<NumberedNode>>;
 
@@ -791,7 +791,7 @@ mod unsafe_ref {
 
     mod push_node {
         use super::*;
-        use UnsafeRef;
+        use crate::UnsafeRef;
 
         #[test]
         fn not_empty_after_first_push() {

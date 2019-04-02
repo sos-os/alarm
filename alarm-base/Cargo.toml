@@ -5,6 +5,7 @@ authors = ["Eliza Weisman <eliza@buoyant.io>"]
 description = """
 Base types and API definitions shared across ALARM allocators.
 """
+edition = "2018"
 
 [features]
 default = ["lend"]

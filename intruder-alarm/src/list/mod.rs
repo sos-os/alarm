@@ -7,10 +7,10 @@
 //! use intrusive lists in code that runs without the kernel memory allocator,
 //! like the allocator implementation itself, since each list element manages
 //! its own memory.
-use cursor::{self, Cursor as CursorTrait};
-use Link;
-use OwningRef;
-use UnsafeRef;
+use crate::cursor::{self, Cursor as CursorTrait};
+use crate::Link;
+use crate::OwningRef;
+use crate::UnsafeRef;
 
 use core::{
     iter::{DoubleEndedIterator, Extend, FromIterator, Iterator},

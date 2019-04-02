@@ -8,7 +8,7 @@
 //
 //! Cursors allowing bi-directional traversal of data structures.
 use core::{iter, ops};
-use OwningRef;
+use crate::OwningRef;
 
 //-----------------------------------------------------------------------------
 // Traits

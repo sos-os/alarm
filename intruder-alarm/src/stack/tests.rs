@@ -222,13 +222,13 @@ mod boxed {
 
 mod unsafe_ref {
     use super::*;
-    use UnsafeRef;
+    use crate::UnsafeRef;
 
     pub type UnsafeList = Stack<usize, NumberedNode, UnsafeRef<NumberedNode>>;
 
     mod push_node {
         use super::*;
-        use UnsafeRef;
+        use crate::UnsafeRef;
 
         #[test]
         fn not_empty_after_first_push() {
